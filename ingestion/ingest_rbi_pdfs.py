@@ -239,11 +239,15 @@ def search_and_ingest_fallback(query: str, agent_domain: str, document_id: str, 
             for a in soup.find_all('a', class_='result__a'):
                 href = a.get('href')
                 if href:
-                    if href.startswith('/l/?'):
+                    if '/l/?' in href:
+                        if href.startswith('//'):
+                            href = 'https:' + href
                         parsed = urlparse(href)
                         uddg = parse_qs(parsed.query).get('uddg')
                         if uddg:
                             href = uddg[0]
+                    elif href.startswith('//'):
+                        href = 'https:' + href
                     links.append(href)
         else:
             print(f"DuckDuckGo search returned status: {r.status_code}. Trying Yahoo fallback...")
