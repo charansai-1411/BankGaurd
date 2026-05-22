@@ -1,6 +1,6 @@
 import os
 
-def call_agent(agent_type: str, query: str, context: str, call_depth: int) -> list[dict]:
+def call_agent(agent_type: str, query: str, context: str, call_depth: int, job_id: str = None) -> list[dict]:
     """
     Triggers peer-to-peer delegation to another compliance agent.
     Enforces a strict recursion depth ceiling (call_depth < 2).
@@ -19,7 +19,7 @@ def call_agent(agent_type: str, query: str, context: str, call_depth: int) -> li
         
     # Prepare initial state for the sub-agent
     delegated_state = {
-        "job_id": f"delegated_{agent_type}_{os.urandom(4).hex()}",
+        "job_id": job_id or f"delegated_{agent_type}_{os.urandom(4).hex()}",
         "agent_domain": agent_type,
         "mode": "full_diagnosis",
         "call_depth": call_depth + 1,

@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #060709;
+    color: #d1d5db;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  
+  code, pre, .font-mono {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Flat custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #060709;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1a2030;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #e8c547;
+  }
+}
+
+/* Custom dynamic dot pulse animation for SSE agent progress indicator */
+@keyframes pulseTeal {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.15);
+  }
+}
+
+.animate-pulse-teal {
+  animation: pulseTeal 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

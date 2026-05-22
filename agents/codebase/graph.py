@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, END
 from agents.codebase.state import AgentState
 from shared.db import get_db_client
 from shared.gemini_client import get_gemini_model
+from shared.redis_client import publish_agent_event
 from agents.shared.tools.vector_search import search
 from agents.shared.tools.evidence_validator import validate
 from agents.shared.tools.severity_calculator import calculate_severity
@@ -24,6 +25,9 @@ def clean_json_response(text: str) -> str:
 # Nodes
 def initialize_state(state: AgentState):
     domain = state.get("agent_domain") or "codebase"
+    job_id = state.get("job_id", "local_dev")
+    publish_agent_event(job_id, domain, "initialize", "running", f"Initializing state for {domain} compliance audit.")
+    
     chunks = state.get("regulation_chunks")
     if not chunks:
         db = get_db_client()
@@ -32,6 +36,7 @@ def initialize_state(state: AgentState):
         chunks = response.data or []
         chunks.sort(key=lambda x: x.get("metadata", {}).get("chunk_index") or 0)
         
+    publish_agent_event(job_id, domain, "initialize", "done", f"Loaded {len(chunks)} regulation chunks for auditing.")
     return {
         "regulation_chunks": chunks,
         "current_chunk_index": 0,
@@ -43,12 +48,17 @@ def initialize_state(state: AgentState):
 def relevance_reasoner(state: AgentState):
     idx = state["current_chunk_index"]
     chunks = state.get("regulation_chunks", [])
+    domain = state.get("agent_domain") or "codebase"
+    job_id = state.get("job_id", "local_dev")
     
     if idx >= len(chunks):
+        publish_agent_event(job_id, domain, "relevance_reasoner", "done", "All regulation chunks processed.")
         return {"session_memory": [{"decision": "SKIP"}]}
         
     current_chunk = chunks[idx]
     chunk_text = current_chunk["content"]
+    
+    publish_agent_event(job_id, domain, "relevance_reasoner", "running", f"Analyzing relevance of chunk {idx + 1}/{len(chunks)}.")
     
     model = get_gemini_model("gemini-1.5-pro")
     
@@ -67,16 +77,21 @@ def relevance_reasoner(state: AgentState):
             "delegation_query": None
         }
         
+    decision = result.get("decision", "INVESTIGATE")
+    publish_agent_event(job_id, domain, "relevance_reasoner", "done", f"Relevance assessment for chunk {idx + 1}: {decision}. Reason: {result.get('reason', 'N/A')}")
     return {"session_memory": [result]}
 
 def tool_caller(state: AgentState):
     idx = state["current_chunk_index"]
     chunk = state["regulation_chunks"][idx]
     chunk_text = chunk["content"]
+    domain = state.get("agent_domain") or "codebase"
+    job_id = state.get("job_id", "local_dev")
     
     retry = state.get("retry_count", 0)
     model = get_gemini_model("gemini-1.5-flash")
     
+    publish_agent_event(job_id, domain, "tool_caller", "running", f"Generating search query for chunk. Retry iteration: {retry}")
     if retry == 0:
         try:
             prompt = QUERY_GENERATOR_PROMPT.format(chunk_text=chunk_text)
@@ -97,9 +112,11 @@ def tool_caller(state: AgentState):
     target_namespace = "codebase"
     doc_id = chunk.get("metadata", {}).get("document_id")
     
+    publish_agent_event(job_id, domain, "tool_caller", "vector_search", f"Searching codebase snippets: '{query}'")
     search_results = search(query=query, namespace=target_namespace, top_k=3, document_id=doc_id)
     
     max_sim = max([r["similarity"] for r in search_results]) if search_results else 0.0
+    publish_agent_event(job_id, domain, "tool_caller", "done", f"Search completed. Results found: {len(search_results)}, max similarity: {max_sim:.2f}")
     
     step_memory = {
         "search_query": query,
@@ -120,6 +137,10 @@ def gap_analyzer(state: AgentState):
     idx = state["current_chunk_index"]
     chunk = state["regulation_chunks"][idx]
     chunk_text = chunk["content"]
+    domain = state.get("agent_domain") or "codebase"
+    job_id = state.get("job_id", "local_dev")
+    
+    publish_agent_event(job_id, domain, "gap_analyzer", "running", f"Analyzing compliance gap for chunk {idx + 1}.")
     
     step_memory = state["session_memory"][-1]
     search_results = step_memory.get("search_results", [])
@@ -139,6 +160,7 @@ def gap_analyzer(state: AgentState):
         severity = calculate_severity(chunk.get("metadata", {}).get("is_mandatory", True), "none")
         finding["severity"] = severity
         
+        publish_agent_event(job_id, domain, "gap_analyzer", "finding", f"Compliance gap identified due to insufficient evidence (severity: {severity}).", data=finding)
         current_findings = list(state.get("findings", []))
         current_findings.append(finding)
         return {"findings": current_findings}
@@ -189,6 +211,24 @@ def gap_analyzer(state: AgentState):
     severity = calculate_severity(is_mandatory, coverage)
     finding["severity"] = severity
     
+    if has_gap:
+        publish_agent_event(
+            job_id,
+            domain,
+            "gap_analyzer",
+            "finding",
+            f"Compliance gap identified: {gap_desc[:60]}... (severity: {severity})",
+            data=finding
+        )
+    else:
+        publish_agent_event(
+            job_id,
+            domain,
+            "gap_analyzer",
+            "done",
+            f"Gap analysis for chunk {idx + 1} completed: compliant."
+        )
+    
     current_findings = list(state.get("findings", []))
     current_findings.append(finding)
     
@@ -204,6 +244,10 @@ def compile_report(state: AgentState):
     """
     Concludes the graph execution, deduplicates findings, and prepares final state metadata.
     """
+    domain = state.get("agent_domain") or "codebase"
+    job_id = state.get("job_id", "local_dev")
+    publish_agent_event(job_id, domain, "compile_report", "running", "Compiling and deduplicating compliance findings.")
+    
     findings = state.get("findings", [])
     unique_findings = []
     seen = set()
@@ -219,6 +263,7 @@ def compile_report(state: AgentState):
     except Exception as e:
         print(f"Error sorting findings: {e}")
         
+    publish_agent_event(job_id, domain, "compile_report", "done", f"Report compiled. Found {len(unique_findings)} unique compliance violations.")
     return {"findings": unique_findings}
 
 # Routing logic

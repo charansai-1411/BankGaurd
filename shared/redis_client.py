@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import redis
 
 _redis_client = None
@@ -67,5 +70,26 @@ def get_arq_redis_settings():
         password=password,
         ssl=ssl
     )
+
+def publish_agent_event(job_id: str, agent: str, tool: str, status: str, message: str, data: dict = None):
+    """
+    Publishes an agent event to Redis Pub/Sub for SSE streaming.
+    """
+    import json
+    try:
+        r = get_redis_connection()
+        channel = f"job:stream:{job_id}"
+        payload = {
+            "agent": agent,
+            "tool": tool,
+            "status": status,
+            "message": message
+        }
+        if data is not None:
+            payload["data"] = data
+        r.publish(channel, json.dumps(payload))
+        print(f"[Redis Stream] Published to {channel}: {payload}")
+    except Exception as e:
+        print(f"Error publishing agent event to Redis: {e}")
 
 
