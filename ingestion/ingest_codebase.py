@@ -29,6 +29,101 @@ def clone_repository(repo_url: str, dest_dir: str) -> str:
     )
     return dest_dir
 
+def mask_comments_and_literals(content: str) -> str:
+    """
+    Replaces comments (// and /* */) and string/regex/template literals ("", '', and ``)
+    with spaces (preserving newlines and length) to avoid counting braces
+    or keywords inside comments/strings, while maintaining original line/char offsets.
+    """
+    chars = list(content)
+    n = len(chars)
+    i = 0
+    state = "code" # code, line_comment, block_comment, str_single, str_double, str_template
+    
+    while i < n:
+        c = chars[i]
+        next_c = chars[i+1] if i + 1 < n else ""
+        
+        if state == "code":
+            if c == "/" and next_c == "/":
+                state = "line_comment"
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c == "/" and next_c == "*":
+                state = "block_comment"
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c == '"':
+                state = "str_double"
+                chars[i] = " "
+                i += 1
+                continue
+            elif c == "'":
+                state = "str_single"
+                chars[i] = " "
+                i += 1
+                continue
+            elif c == "`":
+                state = "str_template"
+                chars[i] = " "
+                i += 1
+                continue
+        elif state == "line_comment":
+            if c == "\n":
+                state = "code"
+            else:
+                chars[i] = " "
+        elif state == "block_comment":
+            if c == "*" and next_c == "/":
+                state = "code"
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c != "\n":
+                chars[i] = " "
+        elif state == "str_double":
+            if c == "\\" and next_c == '"':
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c == '"':
+                state = "code"
+                chars[i] = " "
+            elif c != "\n":
+                chars[i] = " "
+        elif state == "str_single":
+            if c == "\\" and next_c == "'":
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c == "'":
+                state = "code"
+                chars[i] = " "
+            elif c != "\n":
+                chars[i] = " "
+        elif state == "str_template":
+            if c == "\\" and next_c == "`":
+                chars[i] = " "
+                chars[i+1] = " "
+                i += 2
+                continue
+            elif c == "`":
+                state = "code"
+                chars[i] = " "
+            elif c != "\n":
+                chars[i] = " "
+                
+        i += 1
+        
+    return "".join(chars)
+
 def chunk_code_file(content: str, file_path: str) -> list[dict]:
     """
     Chunks source code files into logic blocks (classes, methods, functions)
@@ -123,75 +218,100 @@ def chunk_code_file(content: str, file_path: str) -> list[dict]:
             })
             
     elif ext in [".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".cpp", ".c", ".h", ".cs", ".rs"]:
-        # Curly brace matching heuristics
-        class_func_pattern = re.compile(
-            r'(class\s+\w+|function\s+\w+|\w+\s*\([^)]*\)\s*\{|\w+\s+class\s+\w+|\w+\s+\w+\s*\([^)]*\)\s*\{|fn\s+\w+)'
-        )
+        masked_content = mask_comments_and_literals(content)
+        masked_lines = masked_content.splitlines()
         
-        current_block = None
-        brace_count = 0
-        in_braces = False
+        # Check if braces are highly unbalanced
+        total_open = masked_content.count('{')
+        total_close = masked_content.count('}')
         
-        for idx, line in enumerate(lines):
-            line_num = idx + 1
-            open_braces = line.count('{')
-            close_braces = line.count('}')
+        if abs(total_open - total_close) > 10 or (total_open == 0 and len(lines) > 40):
+            # Fallback to sliding window for unbalanced codebase
+            step = 40
+            for i in range(0, len(lines), step):
+                block_lines = lines[i:i+50]
+                block_content = "\n".join(block_lines)
+                chunks.append({
+                    "content": block_content,
+                    "start_line": i + 1,
+                    "end_line": min(i + 50, len(lines)),
+                    "name": "fallback_window",
+                    "type": "fallback"
+                })
+        else:
+            # Curly brace matching heuristics on masked lines
+            class_func_pattern = re.compile(
+                r'(class\s+\w+|function\s+\w+|\w+\s*\([^)]*\)\s*\{|\w+\s+class\s+\w+|\w+\s+\w+\s*\([^)]*\)\s*\{|fn\s+\w+)'
+            )
             
-            match = class_func_pattern.search(line)
+            current_block = None
+            brace_count = 0
+            in_braces = False
             
-            if match and not in_braces:
-                if current_block:
-                    block_content = "\n".join(current_block["lines"])
-                    chunks.append({
-                        "content": block_content,
-                        "start_line": current_block["start_line"],
-                        "end_line": line_num - 1,
-                        "name": current_block["name"],
-                        "type": "block"
-                    })
+            for idx, line in enumerate(lines):
+                line_num = idx + 1
+                if idx >= len(masked_lines):
+                    break
+                masked_line = masked_lines[idx]
+                open_braces = masked_line.count('{')
+                close_braces = masked_line.count('}')
                 
-                current_block = {
-                    "start_line": line_num,
-                    "name": match.group(1).strip(),
-                    "type": "declaration",
-                    "lines": [line]
-                }
-                brace_count = open_braces - close_braces
-                in_braces = brace_count > 0
-            else:
-                if current_block:
-                    current_block["lines"].append(line)
-                    brace_count += open_braces - close_braces
-                    if brace_count <= 0 and in_braces:
+                match = class_func_pattern.search(masked_line)
+                
+                if match and not in_braces:
+                    if current_block:
                         block_content = "\n".join(current_block["lines"])
                         chunks.append({
                             "content": block_content,
                             "start_line": current_block["start_line"],
-                            "end_line": line_num,
+                            "end_line": line_num - 1,
                             "name": current_block["name"],
                             "type": "block"
                         })
-                        current_block = None
-                        in_braces = False
-                else:
+                    
                     current_block = {
                         "start_line": line_num,
-                        "name": "general",
-                        "type": "general",
+                        "name": match.group(1).strip(),
+                        "type": "declaration",
                         "lines": [line]
                     }
                     brace_count = open_braces - close_braces
                     in_braces = brace_count > 0
-                    
-        if current_block:
-            block_content = "\n".join(current_block["lines"])
-            chunks.append({
-                "content": block_content,
-                "start_line": current_block["start_line"],
-                "end_line": len(lines),
-                "name": current_block["name"],
-                "type": "block"
-            })
+                else:
+                    if current_block:
+                        current_block["lines"].append(line)
+                        brace_count += open_braces - close_braces
+                        # Hard limit at 150 lines per block to avoid massive blocks
+                        if (brace_count <= 0 and in_braces) or (len(current_block["lines"]) >= 150):
+                            block_content = "\n".join(current_block["lines"])
+                            chunks.append({
+                                "content": block_content,
+                                "start_line": current_block["start_line"],
+                                "end_line": line_num,
+                                "name": current_block["name"],
+                                "type": "block"
+                            })
+                            current_block = None
+                            in_braces = False
+                    else:
+                        current_block = {
+                            "start_line": line_num,
+                            "name": "general",
+                            "type": "general",
+                            "lines": [line]
+                        }
+                        brace_count = open_braces - close_braces
+                        in_braces = brace_count > 0
+                        
+            if current_block:
+                block_content = "\n".join(current_block["lines"])
+                chunks.append({
+                    "content": block_content,
+                    "start_line": current_block["start_line"],
+                    "end_line": len(lines),
+                    "name": current_block["name"],
+                    "type": "block"
+                })
     else:
         # Fallback sliding window for config / text files
         step = 40

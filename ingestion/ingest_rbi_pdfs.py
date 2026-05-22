@@ -1,6 +1,7 @@
 import os
 import io
 import tempfile
+import time
 import requests
 import pypdf
 from bs4 import BeautifulSoup
@@ -9,6 +10,29 @@ from urllib.parse import urlparse, parse_qs
 from shared.gemini_client import get_embedding
 from shared.r2_client import upload_file_to_r2
 from ingestion.embed_utils import recursive_character_split, store_embeddings
+
+def requests_get_with_retry(url: str, max_retries: int = 4, backoff_factor: float = 1.0, **kwargs) -> requests.Response:
+    """
+    Wrapper around requests.get with exponential backoff retry logic.
+    """
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, **kwargs)
+            if response.status_code == 429 or response.status_code >= 500:
+                if attempt == max_retries - 1:
+                    return response
+                sleep_time = backoff_factor * (2 ** attempt)
+                print(f"HTTP {response.status_code} for {url}. Retrying in {sleep_time}s...")
+                time.sleep(sleep_time)
+                continue
+            return response
+        except (requests.exceptions.RequestException, ConnectionError) as e:
+            if attempt == max_retries - 1:
+                raise e
+            sleep_time = backoff_factor * (2 ** attempt)
+            print(f"Request exception {e} for {url}. Retrying in {sleep_time}s...")
+            time.sleep(sleep_time)
+    raise requests.exceptions.RequestException("Request failed after max retries")
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
     """
@@ -99,7 +123,7 @@ def scrape_rbi_notifications(limit: int = 5) -> list[dict]:
     
     try:
         # Disable SSL verification warnings if necessary
-        r = requests.get(url, headers=headers, timeout=15, verify=False)
+        r = requests_get_with_retry(url, headers=headers, timeout=15, verify=False)
         if r.status_code != 200:
             print(f"Failed to load RBI site: {r.status_code}")
             return []
@@ -142,7 +166,7 @@ def download_and_ingest_circular(url: str, agent_domain: str, document_id: str):
     }
     
     try:
-        r = requests.get(url, headers=headers, timeout=20, verify=False)
+        r = requests_get_with_retry(url, headers=headers, timeout=20, verify=False)
         if r.status_code != 200:
             return {"status": "error", "message": f"Failed to download URL. Status: {r.status_code}"}
             
@@ -209,7 +233,7 @@ def search_and_ingest_fallback(query: str, agent_domain: str, document_id: str, 
     # 1. Try DuckDuckGo
     try:
         search_url = f"https://html.duckduckgo.com/html/?q={requests.utils.quote(search_query)}"
-        r = requests.get(search_url, headers=headers, timeout=15)
+        r = requests_get_with_retry(search_url, headers=headers, timeout=15)
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             for a in soup.find_all('a', class_='result__a'):
@@ -230,7 +254,7 @@ def search_and_ingest_fallback(query: str, agent_domain: str, document_id: str, 
     if not links:
         try:
             yahoo_url = f"https://search.yahoo.com/search?p={requests.utils.quote(search_query)}"
-            r = requests.get(yahoo_url, headers=headers, timeout=15)
+            r = requests_get_with_retry(yahoo_url, headers=headers, timeout=15)
             if r.status_code == 200:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 for h3 in soup.find_all('h3'):

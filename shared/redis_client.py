@@ -39,4 +39,33 @@ def get_redis_connection() -> redis.Redis:
         )
     return _redis_client
 
+def get_arq_redis_settings():
+    """
+    Returns an arq RedisSettings instance configured from environment variables.
+    """
+    from arq.connections import RedisSettings
+    host = os.getenv("REDIS_HOST", "")
+    port_str = os.getenv("REDIS_PORT", "6379")
+    password = os.getenv("REDIS_PASSWORD", "")
+    ssl_str = os.getenv("REDIS_SSL", "true")
+    
+    if host.startswith('"') and host.endswith('"'):
+        host = host[1:-1]
+    if password.startswith('"') and password.endswith('"'):
+        password = password[1:-1]
+        
+    try:
+        port = int(port_str)
+    except ValueError:
+        port = 6379
+        
+    ssl = ssl_str.lower() in ("true", "1", "yes")
+    
+    return RedisSettings(
+        host=host,
+        port=port,
+        password=password,
+        ssl=ssl
+    )
+
 
