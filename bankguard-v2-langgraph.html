@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BankGuard — Agentic Architecture V2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:      #060709;
+  --s1:      #0b0d11;
+  --s2:      #10131a;
+  --s3:      #161b24;
+  --border:  #1a2030;
+  --border2: #222a3a;
+  --gold:    #e8c547;
+  --teal:    #4fc9a4;
+  --red:     #e05c5c;
+  --blue:    #7eb8f7;
+  --purp:    #c084fc;
+  --orange:  #f97316;
+  --text:    #9aa3b5;
+  --textd:   #4a5268;
+  --textb:   #dde2ec;
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'IBM Plex Sans', sans-serif;
+  --serif:   'DM Serif Display', serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12.5px;line-height:1.65;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── HEADER ── */
+.hdr{
+  padding:56px 60px 44px;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end;
+  position:relative;overflow:hidden;
+}
+.hdr::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(232,197,71,0.05) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hdr-eye{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.hdr-eye::before{content:'';width:24px;height:1px;background:var(--gold);}
+.hdr-title{font-family:var(--serif);font-size:clamp(32px,5vw,62px);color:var(--textb);line-height:1.0;margin-bottom:18px;}
+.hdr-title em{color:var(--gold);font-style:italic;}
+.hdr-desc{font-family:var(--sans);font-size:13px;color:var(--text);max-width:560px;line-height:1.7;}
+.hdr-meta{display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--border2);padding-left:32px;min-width:220px;}
+.hdr-mk{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--textd);margin-bottom:3px;}
+.hdr-mv{font-size:11px;color:var(--textb);font-family:var(--sans);}
+
+/* ── NAV ── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,7,9,0.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 60px;display:flex;gap:0;overflow-x:auto;
+}
+.nav a{
+  padding:13px 16px;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--textd);text-decoration:none;white-space:nowrap;
+  border-bottom:2px solid transparent;transition:all 0.15s;font-family:var(--mono);
+}
+.nav a:hover{color:var(--gold);border-color:var(--gold);}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1300px;margin:0 auto;padding:0 60px;}
+.section{padding:64px 0 8px;}
+.sec-label{font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.sec-label::after{content:'';flex:0 0 32px;height:1px;background:var(--gold);opacity:0.4;}
+.sec-title{font-family:var(--serif);font-size:28px;color:var(--textb);margin-bottom:8px;line-height:1.1;}
+.sec-sub{font-family:var(--sans);font-size:12px;color:var(--textd);max-width:780px;line-height:1.75;margin-bottom:36px;}
+
+/* ── PRINCIPLES ── */
+.principles{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);border-radius:3px;overflow:hidden;gap:1px;background:var(--border);}
+.principle{background:var(--s1);padding:24px 22px;}
+.p-n{font-size:9px;letter-spacing:3px;color:var(--textd);margin-bottom:10px;}
+.p-h{font-family:var(--serif);font-size:15px;color:var(--textb);margin-bottom:8px;}
+.p-b{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.7;}
+.p-b code{font-family:var(--mono);font-size:10px;color:var(--gold);}
+
+/* ── BOX SYSTEM ── */
+.diagram{background:var(--s1);border:1px solid var(--border);border-radius:3px;padding:40px;margin:28px 0;overflow-x:auto;}
+.d-lbl{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--textd);margin-bottom:10px;padding-left:12px;border-left:2px solid var(--border2);font-family:var(--mono);}
+.d-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.divider{display:flex;align-items:center;gap:14px;margin:18px 0;color:var(--textd);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono);}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border2);}
+.box{border:1px solid var(--border2);border-radius:2px;padding:12px 16px;background:var(--s2);flex:1;min-width:140px;transition:border-color 0.15s;}
+.box:hover{border-color:var(--gold);}
+.box-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;font-family:var(--mono);}
+.box-name{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--textb);margin-bottom:3px;}
+.box-tech{font-size:10px;color:var(--textd);font-family:var(--mono);line-height:1.5;}
+.c-gold .box-tag{color:var(--gold);} .c-gold .box{border-color:rgba(232,197,71,0.2);}
+.c-teal .box-tag{color:var(--teal);} .c-teal .box{border-color:rgba(79,201,164,0.2);}
+.c-blue .box-tag{color:var(--blue);} .c-blue .box{border-color:rgba(126,184,247,0.2);}
+.c-purp .box-tag{color:var(--purp);} .c-purp .box{border-color:rgba(192,132,252,0.2);}
+.c-red  .box-tag{color:var(--red);}  .c-red  .box{border-color:rgba(224,92,92,0.2);}
+.c-orng .box-tag{color:var(--orange);} .c-orng .box{border-color:rgba(249,115,22,0.2);}
+
+/* ── LANGGRAPH STATE DIAGRAM ── */
+.lg-diagram{background:var(--s1);border:1px solid var(--border);border-radius:3px;padding:36px;margin:28px 0;}
+.lg-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:28px;font-family:var(--mono);}
+
+.lg-graph{display:flex;flex-direction:column;align-items:center;gap:0;}
+.lg-node{
+  background:var(--s2);border:1px solid var(--border2);border-radius:3px;
+  padding:14px 20px;width:100%;max-width:680px;position:relative;
+  margin-bottom:0;
+}
+.lg-node.node-start{border-color:rgba(232,197,71,0.4);background:rgba(232,197,71,0.04);}
+.lg-node.node-end{border-color:rgba(79,201,164,0.4);background:rgba(79,201,164,0.04);}
+.lg-node.node-tool{border-color:rgba(126,184,247,0.3);background:rgba(126,184,247,0.03);}
+.lg-node.node-decision{border-color:rgba(192,132,252,0.3);background:rgba(192,132,252,0.03);}
+.lg-node.node-agent{border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.03);}
+
+.ln-type{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-family:var(--mono);}
+.node-start  .ln-type{color:var(--gold);}
+.node-end    .ln-type{color:var(--teal);}
+.node-tool   .ln-type{color:var(--blue);}
+.node-decision .ln-type{color:var(--purp);}
+.node-agent  .ln-type{color:var(--orange);}
+
+.ln-name{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--textb);margin-bottom:3px;}
+.ln-desc{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.6;}
+.ln-desc code{font-family:var(--mono);font-size:10px;color:var(--teal);background:rgba(79,201,164,0.07);padding:1px 4px;border-radius:2px;}
+
+.lg-arrow{
+  width:1px;height:28px;background:var(--border2);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  position:relative;
+}
+.lg-arrow::after{content:'▼';color:var(--textd);font-size:8px;margin-top:-4px;}
+.lg-arrow-label{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  font-size:9px;color:var(--textd);white-space:nowrap;font-family:var(--mono);
+  letter-spacing:1px;
+}
+
+/* conditional branches */
+.lg-branch{
+  display:grid;grid-template-columns:1fr 40px 1fr;gap:16px;
+  width:100%;max-width:680px;align-items:start;margin:0;
+}
+.lg-branch-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:20px;}
+.lg-branch-arrow span{font-size:9px;color:var(--textd);font-family:var(--mono);letter-spacing:1px;writing-mode:vertical-rl;}
+
+.lg-branch-node{background:var(--s2);border:1px solid var(--border2);border-radius:3px;padding:12px 16px;}
+.lg-branch-node.bn-skip{border-color:rgba(74,82,104,0.4);}
+.lg-branch-node.bn-investigate{border-color:rgba(232,197,71,0.3);}
+.lg-branch-node.bn-delegate{border-color:rgba(249,115,22,0.3);}
+.bn-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-family:var(--mono);}
+.bn-skip .bn-label{color:var(--textd);}
+.bn-investigate .bn-label{color:var(--gold);}
+.bn-delegate .bn-label{color:var(--orange);}
+.bn-name{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--textb);margin-bottom:2px;}
+.bn-desc{font-size:10px;color:var(--textd);font-family:var(--mono);line-height:1.5;}
+
+/* ── TOOLS GRID ── */
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0;}
+.tool-card{background:var(--s1);border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.tc-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.tc-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--textd);margin-bottom:4px;font-family:var(--mono);}
+.tc-name{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--textb);}
+.tc-badge{font-size:8px;padding:2px 7px;border-radius:2px;font-family:var(--mono);white-space:nowrap;}
+.tb-blue{background:rgba(126,184,247,0.08);color:var(--blue);border:1px solid rgba(126,184,247,0.2);}
+.tb-gold{background:rgba(232,197,71,0.08);color:var(--gold);border:1px solid rgba(232,197,71,0.2);}
+.tb-orng{background:rgba(249,115,22,0.08);color:var(--orange);border:1px solid rgba(249,115,22,0.2);}
+.tb-purp{background:rgba(192,132,252,0.08);color:var(--purp);border:1px solid rgba(192,132,252,0.2);}
+.tc-body{padding:14px 18px;}
+.tc-sig{font-family:var(--mono);font-size:10px;color:var(--teal);margin-bottom:8px;}
+.tc-why{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.7;}
+.tc-why strong{color:var(--text);}
+.tc-retry{font-family:var(--sans);font-size:10px;color:var(--textd);padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
+.tc-retry span{color:var(--gold);}
+
+/* ── INTER-AGENT COMM ── */
+.ia-diagram{background:var(--s1);border:1px solid var(--border);border-radius:3px;padding:36px;margin:28px 0;}
+.ia-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:28px;font-family:var(--mono);}
+.ia-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px;}
+.ia-agent{background:var(--s2);border:1px solid var(--border2);border-radius:3px;padding:16px;}
+.ia-agent.v1{border-top:2px solid var(--gold);}
+.ia-agent.v1b{border-top:2px solid var(--teal);}
+.ia-agent.v2{border-top:2px solid var(--border2);opacity:0.55;}
+.ia-aname{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--textb);margin-bottom:4px;}
+.ia-adesc{font-size:10px;color:var(--textd);font-family:var(--mono);line-height:1.5;}
+.ia-rules{background:var(--s2);border:1px solid var(--border2);border-radius:3px;padding:20px;}
+.ia-rule{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);}
+.ia-rule:last-child{border-bottom:none;}
+.ir-num{width:20px;height:20px;border-radius:50%;background:rgba(232,197,71,0.1);color:var(--gold);border:1px solid rgba(232,197,71,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;font-family:var(--mono);}
+.ir-body{}
+.ir-name{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--textb);margin-bottom:2px;}
+.ir-desc{font-size:10px;color:var(--textd);font-family:var(--mono);line-height:1.55;}
+.ir-desc code{color:var(--teal);background:rgba(79,201,164,0.07);padding:1px 4px;border-radius:2px;}
+
+/* ── AGENTS ── */
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:28px 0;}
+.agent-card{border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.agent-card.ac-v1{border-top:3px solid var(--gold);}
+.agent-card.ac-v1b{border-top:3px solid var(--teal);}
+.agent-card.ac-v1c{border-top:3px solid var(--blue);}
+.agent-card.ac-v2{border-top:3px solid var(--border2);opacity:0.5;}
+.ac-head{padding:20px 22px 16px;background:var(--s1);border-bottom:1px solid var(--border);}
+.ac-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.ac-domain{font-size:8px;letter-spacing:3px;text-transform:uppercase;font-family:var(--mono);}
+.ac-v1  .ac-domain{color:var(--gold);}
+.ac-v1b .ac-domain{color:var(--teal);}
+.ac-v1c .ac-domain{color:var(--blue);}
+.ac-v2  .ac-domain{color:var(--textd);}
+.ac-ver{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px;font-family:var(--mono);}
+.ver-now{background:rgba(232,197,71,0.1);color:var(--gold);border:1px solid rgba(232,197,71,0.2);}
+.ver-next{background:rgba(26,32,48,0.8);color:var(--textd);border:1px solid var(--border);}
+.ac-name{font-family:var(--serif);font-size:19px;color:var(--textb);margin-bottom:6px;}
+.ac-desc{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.65;}
+.ac-docs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.dt{font-size:9px;padding:3px 8px;border-radius:2px;font-family:var(--mono);}
+.dt-reg{background:rgba(232,197,71,0.07);color:var(--gold);border:1px solid rgba(232,197,71,0.2);}
+.dt-bank{background:rgba(126,184,247,0.07);color:var(--blue);border:1px solid rgba(126,184,247,0.2);}
+.dt-code{background:rgba(79,201,164,0.07);color:var(--teal);border:1px solid rgba(79,201,164,0.2);}
+.ac-body{padding:18px 22px;background:var(--s2);}
+.ac-sec-title{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--textd);margin-bottom:10px;font-family:var(--mono);}
+.ac-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.ac-tool-tag{font-size:9px;padding:3px 8px;border-radius:2px;font-family:var(--mono);}
+.att-blue{background:rgba(126,184,247,0.07);color:var(--blue);border:1px solid rgba(126,184,247,0.2);}
+.att-orng{background:rgba(249,115,22,0.07);color:var(--orange);border:1px solid rgba(249,115,22,0.2);}
+.ac-qs{list-style:none;}
+.ac-qs li{font-size:10px;color:var(--textd);padding:5px 0;border-bottom:1px solid var(--border);font-family:var(--mono);line-height:1.5;}
+.ac-qs li:last-child{border-bottom:none;}
+.ac-qs li::before{content:'›  ';color:var(--gold);}
+
+/* ── SERVICES ── */
+.svc-list{margin:20px 0;}
+.svc-item{background:var(--s1);border:1px solid var(--border);border-radius:3px;margin-bottom:8px;overflow:hidden;}
+.svc-head{display:flex;align-items:center;gap:16px;padding:15px 20px;cursor:pointer;border-bottom:1px solid transparent;transition:background 0.1s;}
+.svc-head:hover{background:var(--s2);}
+.svc-head.open{border-bottom-color:var(--border);}
+.svc-num{font-size:9px;color:var(--textd);letter-spacing:2px;min-width:32px;font-family:var(--mono);}
+.svc-name{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--textb);flex:1;}
+.svc-tech{font-size:10px;color:var(--textd);font-family:var(--mono);}
+.svc-badge{font-size:9px;padding:2px 8px;border-radius:2px;font-family:var(--mono);white-space:nowrap;}
+.sb-gold{background:rgba(232,197,71,0.08);color:var(--gold);border:1px solid rgba(232,197,71,0.2);}
+.sb-teal{background:rgba(79,201,164,0.08);color:var(--teal);border:1px solid rgba(79,201,164,0.2);}
+.sb-blue{background:rgba(126,184,247,0.08);color:var(--blue);border:1px solid rgba(126,184,247,0.2);}
+.svc-body{display:none;padding:18px 20px;background:var(--s2);}
+.svc-body.open{display:block;}
+.svc-body p{font-family:var(--sans);font-size:12px;color:var(--textd);line-height:1.75;margin-bottom:10px;}
+.svc-body p strong{color:var(--text);}
+.svc-body ul{list-style:none;}
+.svc-body li{font-family:var(--sans);font-size:11px;color:var(--textd);padding:5px 0 5px 16px;position:relative;border-left:1px solid var(--border2);margin-left:8px;margin-bottom:4px;line-height:1.65;}
+.svc-body li::before{content:'›';position:absolute;left:-7px;color:var(--gold);background:var(--s2);padding:0 2px;}
+.svc-body li strong{color:var(--text);}
+.svc-body code{font-family:var(--mono);font-size:10px;color:var(--teal);background:rgba(79,201,164,0.07);padding:1px 5px;border-radius:2px;}
+
+/* ── DATA FLOW ── */
+.flow-steps{margin:24px 0;}
+.flow-step{display:flex;gap:20px;position:relative;}
+.flow-step::before{content:'';position:absolute;left:17px;top:36px;bottom:0;width:1px;background:var(--border2);}
+.flow-step:last-child::before{display:none;}
+.fs-dot{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);z-index:1;}
+.fs-content{padding:5px 0 28px;flex:1;}
+.fs-head{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--textb);margin-bottom:4px;}
+.fs-body{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.75;}
+.fs-body code{font-family:var(--mono);font-size:10px;color:var(--teal);background:rgba(79,201,164,0.07);padding:1px 5px;border-radius:2px;}
+.fs-body strong{color:var(--text);}
+
+/* ── STACK ── */
+.stack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0;}
+.sc{background:var(--s1);border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.sc-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.sc-layer{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--textd);margin-bottom:4px;font-family:var(--mono);}
+.sc-name{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--textb);}
+.sc-v{font-size:8px;padding:2px 7px;border-radius:2px;font-family:var(--mono);background:rgba(232,197,71,0.08);color:var(--gold);border:1px solid rgba(232,197,71,0.2);}
+.sc-body{padding:14px 18px;}
+.sc-tech{font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:500;}
+.sc-why{font-family:var(--sans);font-size:11px;color:var(--textd);line-height:1.7;margin-bottom:10px;}
+.sc-why strong{color:var(--text);}
+.sc-rej{font-family:var(--sans);font-size:10px;color:var(--textd);padding-top:10px;border-top:1px solid var(--border);}
+.sc-rej span{color:var(--red);}
+
+/* ── ROADMAP ── */
+.road-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:24px 0;}
+.rc{background:var(--s1);border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.rc-head{padding:13px 18px;border-bottom:1px solid var(--border);font-family:var(--serif);font-size:15px;}
+.rv1 .rc-head{color:var(--gold);background:rgba(232,197,71,0.04);}
+.rv2 .rc-head{color:var(--teal);background:rgba(79,201,164,0.04);}
+.rv3 .rc-head{color:var(--purp);background:rgba(192,132,252,0.04);}
+.rc-body{padding:14px 18px;}
+.rc-body li{font-family:var(--sans);font-size:11px;color:var(--textd);padding:4px 0;list-style:none;padding-left:12px;position:relative;}
+.rc-body li::before{content:'·';position:absolute;left:0;color:var(--textd);}
+.rc-body li strong{color:var(--text);}
+
+/* ── CALLOUTS ── */
+.callout{border-radius:3px;padding:16px 20px;margin:16px 0;}
+.c-info{background:rgba(232,197,71,0.04);border:1px solid rgba(232,197,71,0.15);}
+.c-warn{background:rgba(224,92,92,0.04);border:1px solid rgba(224,92,92,0.15);}
+.c-teal{background:rgba(79,201,164,0.04);border:1px solid rgba(79,201,164,0.15);}
+.callout p{font-family:var(--sans);font-size:12px;color:var(--textd);line-height:1.75;}
+.callout p strong{color:var(--gold);}
+.c-warn p strong{color:var(--red);}
+.c-teal p strong{color:var(--teal);}
+
+/* ── CONCLUSION ── */
+.conclusion{background:var(--s1);border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:3px;padding:44px;margin:52px 0;}
+.conc-title{font-family:var(--serif);font-size:24px;color:var(--textb);margin-bottom:20px;}
+.conc-body{font-family:var(--sans);font-size:13px;color:var(--textd);line-height:1.85;}
+.conc-body strong{color:var(--textb);}
+.conc-body code{font-family:var(--mono);font-size:11px;color:var(--teal);background:rgba(79,201,164,0.07);padding:1px 5px;border-radius:2px;}
+
+hr{border:none;border-top:1px solid var(--border);margin:52px 0;}
+
+@media(max-width:900px){
+  .wrap,.hdr,.nav{padding-left:20px;padding-right:20px;}
+  .hdr{grid-template-columns:1fr;}
+  .hdr-meta{border-left:none;padding-left:0;border-top:1px solid var(--border2);padding-top:20px;flex-direction:row;flex-wrap:wrap;}
+  .principles,.agent-grid,.stack-grid,.tools-grid,.road-grid,.ia-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="hdr-eye">Agentic Architecture Document · V2</div>
+    <div class="hdr-title">Bank<em>Guard</em></div>
+    <div class="hdr-desc">A LangGraph-powered multi-agent compliance platform. Each agent runs a ReAct loop — reasoning section by section through RBI regulations, calling tools to investigate gaps, delegating to peer agents when needed, and compiling evidence-backed reports. Not just RAG — genuinely agentic.</div>
+  </div>
+  <div class="hdr-meta">
+    <div><div class="hdr-mk">Agent Framework</div><div class="hdr-mv">LangGraph (ReAct StateGraph)</div></div>
+    <div><div class="hdr-mk">V1 Agents</div><div class="hdr-mv">Compliance · API · Codebase</div></div>
+    <div><div class="hdr-mk">Inter-Agent</div><div class="hdr-mv">Peer-to-peer · Call depth limit = 2</div></div>
+    <div><div class="hdr-mk">Stack</div><div class="hdr-mv">Render · Supabase · Gemini · LangGraph · R2 · ARQ</div></div>
+    <div><div class="hdr-mk">Cost</div><div class="hdr-mv">~$0/month (all free tiers)</div></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#principles">Principles</a>
+  <a href="#overview">System Overview</a>
+  <a href="#react">ReAct Loop</a>
+  <a href="#tools">Agent Tools</a>
+  <a href="#inter">Inter-Agent</a>
+  <a href="#agents">Agents</a>
+  <a href="#modes">3 Modes</a>
+  <a href="#services">Services</a>
+  <a href="#dataflow">Data Flow</a>
+  <a href="#stack">Stack</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+
+<div class="wrap">
+
+<!-- PRINCIPLES -->
+<div class="section" id="principles">
+  <div class="sec-label">Foundation</div>
+  <div class="sec-title">5 Principles — Agentic Edition</div>
+  <div class="sec-sub">These replaced the original RAG-only principles when LangGraph was introduced. Every tool, every node, every edge is justified against these.</div>
+  <div class="principles">
+    <div class="principle">
+      <div class="p-n">01</div>
+      <div class="p-h">Reason Before Acting</div>
+      <div class="p-b">Every section is evaluated before any tool is called. The agent decides if a section is relevant before spending tokens on retrieval. Skipping irrelevant sections is not a bug — it is intelligent behavior.</div>
+    </div>
+    <div class="principle">
+      <div class="p-n">02</div>
+      <div class="p-h">Tools Over Prompts</div>
+      <div class="p-b">Structured operations — vector search, code analysis, web scraping, evidence validation — are tools with typed inputs and outputs. The LLM reasons; tools act. Never ask the LLM to do what a deterministic function can do better.</div>
+    </div>
+    <div class="principle">
+      <div class="p-n">03</div>
+      <div class="p-h">Delegate, Don't Duplicate</div>
+      <div class="p-b">When an RBI regulation section touches APIs, the Compliance Agent calls the API Agent. When it touches code, it calls the Codebase Agent. Each agent owns its domain. No agent duplicates another's knowledge or tools.</div>
+    </div>
+    <div class="principle">
+      <div class="p-n">04</div>
+      <div class="p-h">Explicit State Graph</div>
+      <div class="p-b">The agent loop is a LangGraph <code>StateGraph</code> — every node and edge is explicit Python. No hidden orchestration. No magic. You can draw the graph, explain every transition, and debug any failure by inspecting the state at any node.</div>
+    </div>
+    <div class="principle">
+      <div class="p-n">05</div>
+      <div class="p-h">Evidence Is Mandatory</div>
+      <div class="p-b">Every gap finding must cite the exact retrieved chunk as evidence. The Evidence Validator tool verifies citations before the report is compiled. The LLM says <code>"I don't know"</code> if similarity falls below 0.70 — never hallucinates regulation text.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SYSTEM OVERVIEW -->
+<div class="section" id="overview">
+  <div class="sec-label">System Architecture</div>
+  <div class="sec-title">Full System — Layer by Layer</div>
+  <div class="sec-sub">Read top to bottom as the request flow. The key upgrade from pure RAG: each agent now has a LangGraph ReAct loop that reasons, calls tools, retries, and delegates — rather than just retrieving and prompting.</div>
+
+  <div class="diagram">
+    <div class="d-lbl" style="margin-bottom:14px;">CLIENT LAYER</div>
+    <div class="d-row">
+      <div class="box c-gold"><div class="box-tag">Web UI</div><div class="box-name">React Dashboard</div><div class="box-tech">Agent selector · Mode selector · Doc upload · Job polling · Report download · Chat interface</div></div>
+      <div class="box c-gold"><div class="box-tag">REST / Swagger</div><div class="box-name">API Access</div><div class="box-tech">Full Swagger UI · Recruiter demo · External integrations</div></div>
+    </div>
+
+    <div class="divider">HTTPS · Supabase JWT Auth</div>
+
+    <div class="d-lbl" style="margin-bottom:14px;">GATEWAY LAYER</div>
+    <div class="d-row">
+      <div class="box c-teal"><div class="box-tag">API Gateway</div><div class="box-name">FastAPI Gateway</div><div class="box-tech">JWT validation · Rate limiting · Routes by agent_type + mode · Creates job · Enqueues ARQ task · call_depth=0 injected</div></div>
+    </div>
+
+    <div class="divider">ARQ Queue · Per-agent workers · call_depth tracked in state</div>
+
+    <div class="d-lbl" style="margin-bottom:14px;">AGENT LAYER — Each agent is a LangGraph StateGraph. User picks one agent + one mode per run.</div>
+    <div class="d-row">
+      <div class="box c-gold"><div class="box-tag">Agent 1 · V1</div><div class="box-name">RBI Compliance Agent</div><div class="box-tech">RBI IT Framework · Bank Policy docs · Can call API Agent + Codebase Agent</div></div>
+      <div class="box c-teal"><div class="box-tag">Agent 2 · V1</div><div class="box-name">API Compliance Agent</div><div class="box-tech">RBI API Regulations · Bank OpenAPI Spec · Can call Codebase Agent</div></div>
+      <div class="box c-blue"><div class="box-tag">Agent 3 · V1</div><div class="box-name">Codebase Agent</div><div class="box-tech">RBI code/security regulations · Bank source code + docs · Terminal peer — never delegates further</div></div>
+      <div class="box" style="opacity:0.4;border-style:dashed;flex:1;min-width:140px;"><div class="box-tag" style="color:var(--textd);">Agent N · V2+</div><div class="box-name">Cybersecurity · IT · Cloud</div><div class="box-tech">Same LangGraph pattern · New namespace + tools</div></div>
+    </div>
+
+    <div class="divider">LangGraph ReAct Loop — Reason → Tool → Observe → Reason → ...</div>
+
+    <div class="d-lbl" style="margin-bottom:14px;">TOOL LAYER — Each agent has its own tool set. Inter-agent calls are also tools.</div>
+    <div class="d-row">
+      <div class="box c-blue"><div class="box-tag">Retrieval</div><div class="box-name">Vector Search Tool</div><div class="box-tech">Dual namespace · cosine_sim ≥ 0.70 · top-K · Retry with rephrased query if weak</div></div>
+      <div class="box c-blue"><div class="box-tag">Retrieval</div><div class="box-name">Section Expander Tool</div><div class="box-tech">Fetches surrounding chunks for context · Triggered when chunk is cut off mid-clause</div></div>
+      <div class="box c-blue"><div class="box-tag">External</div><div class="box-name">RBI Scraper Tool</div><div class="box-tech">Scrapes RBI website for latest circulars · Called when local corpus may be outdated</div></div>
+      <div class="box c-purp"><div class="box-tag">Validation</div><div class="box-name">Evidence Validator Tool</div><div class="box-tech">Verifies cited regulation chunks exist in corpus · Prevents hallucinated citations</div></div>
+      <div class="box c-purp"><div class="box-tag">Scoring</div><div class="box-name">Severity Calculator Tool</div><div class="box-tech">Deterministic severity scoring · CRITICAL/HIGH/MEDIUM/LOW · Consistent across all agents</div></div>
+      <div class="box" style="border-color:rgba(249,115,22,0.2);flex:1;min-width:140px;"><div class="box-tag" style="color:var(--orange);">Delegation</div><div class="box-name">Inter-Agent Call Tool</div><div class="box-tech">Calls peer agent · Passes call_depth+1 · Returns finding or quick answer</div></div>
+    </div>
+
+    <div class="divider">Gemini 1.5 Pro + text-embedding-004</div>
+
+    <div class="d-lbl" style="margin-bottom:14px;">INTELLIGENCE + STORAGE LAYER</div>
+    <div class="d-row">
+      <div class="box c-gold"><div class="box-tag">LLM</div><div class="box-name">Gemini 1.5 Pro</div><div class="box-tech">Reasoning · Tool selection · Gap analysis · "I don't know" grounding</div></div>
+      <div class="box c-teal"><div class="box-tag">Vector DB</div><div class="box-name">Supabase pgvector</div><div class="box-tech">Dual namespace per agent · is_active versioning · cosine similarity</div></div>
+      <div class="box c-blue"><div class="box-tag">Object Store</div><div class="box-name">Cloudflare R2</div><div class="box-tech">Raw docs · Code repos · PDF reports · Pre-signed URLs</div></div>
+      <div class="box c-purp"><div class="box-tag">Queue + Memory</div><div class="box-name">ARQ + Upstash Redis</div><div class="box-tech">Async job queue · LangGraph state checkpoints · Chat session memory (TTL 30min)</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- REACT LOOP -->
+<div class="section" id="react">
+  <div class="sec-label">Core Intelligence</div>
+  <div class="sec-title">LangGraph ReAct Loop — Full Diagnosis Mode</div>
+  <div class="sec-sub">This is the state graph every agent runs in Full Diagnosis mode. Each node is a Python function. Each edge is a conditional decision. The agent iterates every regulation section — skipping irrelevant ones, calling tools on gaps, delegating to peer agents when needed.</div>
+
+  <div class="lg-diagram">
+    <div class="lg-title">LangGraph StateGraph — Agent Full Diagnosis Loop</div>
+    <div class="lg-graph">
+
+      <div class="lg-node node-start">
+        <div class="ln-type">Start Node</div>
+        <div class="ln-name">Initialize State</div>
+        <div class="ln-desc">Load all regulation chunks for this agent domain (<code>is_active=true, ordered by chunk_index</code>). Set <code>current_chunk_index=0</code>, <code>findings=[]</code>, <code>call_depth</code> from job context. Begin iteration.</div>
+      </div>
+
+      <div class="lg-arrow"><div class="lg-arrow-label">next chunk</div></div>
+
+      <div class="lg-node node-decision">
+        <div class="ln-type">Decision Node</div>
+        <div class="ln-name">Relevance Reasoner</div>
+        <div class="ln-desc">Agent reads the regulation chunk and reasons: Is this section relevant to compliance gaps? Does it contain a mandate, requirement, or control that a bank must implement? <br><br>
+        Routes to: <strong>SKIP</strong> (not a compliance requirement — e.g. preamble, definitions) · <strong>INVESTIGATE</strong> (contains a mandate that needs checking) · <strong>DELEGATE</strong> (domain belongs to a peer agent — API/code related)</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;width:100%;max-width:680px;margin:4px 0;">
+        <div>
+          <div class="lg-arrow"></div>
+          <div class="lg-branch-node bn-skip">
+            <div class="bn-label">Route: Skip</div>
+            <div class="bn-name">Skip Section</div>
+            <div class="bn-desc">Section is preamble, definition, or non-actionable. Log skip reason to state. Advance chunk_index. Return to Relevance Reasoner.</div>
+          </div>
+        </div>
+        <div>
+          <div class="lg-arrow"></div>
+          <div class="lg-branch-node bn-investigate">
+            <div class="bn-label">Route: Investigate</div>
+            <div class="bn-name">Call Tools</div>
+            <div class="bn-desc">Section contains a compliance mandate. Proceed to Tool Caller node to retrieve bank policy evidence and analyze the gap.</div>
+          </div>
+        </div>
+        <div>
+          <div class="lg-arrow"></div>
+          <div class="lg-branch-node bn-delegate">
+            <div class="bn-label">Route: Delegate</div>
+            <div class="bn-name">Call Peer Agent</div>
+            <div class="bn-desc">Section is API/code/cyber domain. Call the appropriate peer agent via Inter-Agent Call Tool with <code>call_depth+1</code>. Await result. Merge finding into state.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg-arrow"><div class="lg-arrow-label">investigate path</div></div>
+
+      <div class="lg-node node-tool">
+        <div class="ln-type">Tool Node</div>
+        <div class="ln-name">Tool Caller</div>
+        <div class="ln-desc">Agent decides which tools to call based on the regulation section content:
+        <br>• <strong>Vector Search Tool</strong> — retrieve matching bank policy chunks (top-5, cosine_sim ≥ 0.70)
+        <br>• <strong>Section Expander Tool</strong> — if retrieved chunk seems cut off, fetch surrounding context
+        <br>• <strong>RBI Scraper Tool</strong> — if agent suspects local corpus is outdated for this section
+        <br><br>Tool results returned to agent state. Agent reasons about the results.</div>
+      </div>
+
+      <div class="lg-arrow"></div>
+
+      <div class="lg-node node-decision">
+        <div class="ln-type">Decision Node</div>
+        <div class="ln-name">Evidence Quality Check</div>
+        <div class="ln-desc">Agent evaluates retrieved bank policy chunks: Are the similarity scores strong enough (≥ 0.70)? Is there enough context to make a gap determination?
+        <br><br>
+        Routes to: <strong>RETRY</strong> (scores weak — rephrase query and call Vector Search again, max 3 retries) · <strong>GAP FOUND</strong> (bank policy doesn't cover this regulation) · <strong>COMPLIANT</strong> (bank policy adequately covers this section) · <strong>INSUFFICIENT</strong> (after 3 retries, still no strong evidence — log as "unable to verify")</div>
+      </div>
+
+      <div class="lg-arrow"><div class="lg-arrow-label">gap found path</div></div>
+
+      <div class="lg-node node-tool">
+        <div class="ln-type">Tool Node</div>
+        <div class="ln-name">Gap Analyzer + Evidence Validator</div>
+        <div class="ln-desc">Gemini generates the gap finding with evidence citation. Then <strong>Evidence Validator Tool</strong> is called to verify the cited regulation chunk actually exists in pgvector. If validation fails → finding is flagged as unverified rather than discarded. <strong>Severity Calculator Tool</strong> assigns CRITICAL/HIGH/MEDIUM/LOW based on obligation_type and coverage score.</div>
+      </div>
+
+      <div class="lg-arrow"></div>
+
+      <div class="lg-node">
+        <div class="ln-type">State Update Node</div>
+        <div class="ln-name">Append Finding to State</div>
+        <div class="ln-desc">Validated <code>GapFinding</code> appended to <code>state.findings</code>. Advance <code>chunk_index</code>. Check if more chunks remain → loop back to Relevance Reasoner. If all chunks processed → proceed to Compile.</div>
+      </div>
+
+      <div class="lg-arrow"><div class="lg-arrow-label">all chunks done</div></div>
+
+      <div class="lg-node node-end">
+        <div class="ln-type">End Node</div>
+        <div class="ln-name">Compile + Generate Report</div>
+        <div class="ln-desc">All findings deduplicated by <code>regulation_clause_ref</code>. Sorted by severity. <strong>Report Writer Tool</strong> called → Jinja2 + WeasyPrint → PDF → Cloudflare R2 → pre-signed URL. Job status updated to <code>READY</code>. Audit log written to Supabase.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="callout c-info">
+    <p><strong>LangGraph State object</strong> carries across all nodes: <code>{ job_id, agent_domain, mode, call_depth, regulation_chunks[], current_chunk_index, findings[], retry_count, session_memory[], report_url }</code>. Every node reads from and writes to this state. This is what makes the loop resumable — if the worker crashes mid-analysis, LangGraph checkpoints (stored in Redis) let it resume from the last completed node.</p>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div class="section" id="tools">
+  <div class="sec-label">Agent Capabilities</div>
+  <div class="sec-title">Every Tool — Signature, Purpose, Retry Logic</div>
+  <div class="sec-sub">Each tool is a typed Python function decorated with LangGraph's tool interface. The LLM decides which tools to call and in what order. Tools are deterministic — no LLM inside a tool, except the Inter-Agent Call Tool which invokes a full agent.</div>
+
+  <div class="tools-grid">
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">Retrieval Tool</div><div class="tc-name">Vector Search</div></div><span class="tc-badge tb-blue">All Agents</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">search(query: str, namespace: str, top_k: int = 5) → List[Chunk]</div>
+        <div class="tc-why"><strong>What it does:</strong> Embeds the query via text-embedding-004 → cosine similarity search against the specified pgvector namespace → returns top-K chunks with similarity scores. Filters <code>is_active=true</code> always.<br><br><strong>Namespaces:</strong> <code>"{agent_domain}_regulation"</code> and <code>"{agent_domain}_bank_doc"</code>. Always called twice per investigation — once per namespace.<br><br><strong>Threshold:</strong> Returns chunks only where cosine_sim ≥ 0.70. If no results, returns empty list — agent treats this as "no bank coverage" signal.</div>
+        <div class="tc-retry"><span>Retry logic:</span> If results are weak (all sim scores 0.70–0.75), agent rephrases the query using Gemini and retries. Max 3 retries per section. After 3 failures → logged as "insufficient evidence."</div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">Retrieval Tool</div><div class="tc-name">Section Expander</div></div><span class="tc-badge tb-blue">All Agents</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">expand(chunk_id: str, window: int = 2) → List[Chunk]</div>
+        <div class="tc-why"><strong>What it does:</strong> Fetches the N chunks before and after a given chunk by <code>chunk_index</code>. Called when the agent detects a retrieved chunk ends mid-sentence or mid-clause — a sign the relevant content continues in adjacent chunks.<br><br><strong>When called:</strong> Agent reasons "this chunk seems incomplete" → calls Section Expander → receives surrounding context → re-evaluates with full context.<br><br><strong>Why important:</strong> RBI circulars have multi-paragraph clauses. A single 800-token chunk may capture a requirement header but not the full obligation text. Without expansion, the agent would judge coverage on incomplete regulation text.</div>
+        <div class="tc-retry"><span>No retry needed</span> — deterministic DB fetch by chunk_index range.</div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">External Tool</div><div class="tc-name">RBI Scraper</div></div><span class="tc-badge tb-gold">All Agents</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">scrape_rbi(query: str, circular_type: str) → List[Document]</div>
+        <div class="tc-why"><strong>What it does:</strong> Scrapes RBI's official website (rbi.org.in) for the latest circular matching the query. Returns document title, date, URL, and text content. Used when the agent suspects the local corpus is outdated — e.g. regulation section references a newer amendment.<br><br><strong>When called:</strong> Agent detects phrases like "as amended", "refer to latest circular", or finds the local corpus has no chunks dated within the last 6 months for this topic → calls scraper → if newer circular found → ingests it on the fly → re-runs Vector Search.</div>
+        <div class="tc-retry"><span>Retry logic:</span> If scraper fails (network/rate limit) → agent continues with existing corpus and flags finding as "may be based on outdated regulation — please verify."</div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">Validation Tool</div><div class="tc-name">Evidence Validator</div></div><span class="tc-badge tb-purp">All Agents</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">validate(chunk_id: str, cited_text: str) → ValidationResult</div>
+        <div class="tc-why"><strong>What it does:</strong> After Gemini generates a gap finding with an evidence citation, this tool verifies the cited chunk actually exists in pgvector and that the cited text matches the stored chunk content (fuzzy match, threshold 0.85). Prevents hallucinated regulation citations.<br><br><strong>Why critical:</strong> This is a compliance product. A falsely cited RBI clause in an audit report is legally dangerous. This tool is a hard gate — no finding passes to the report without validation passing.</div>
+        <div class="tc-retry"><span>On failure:</span> Finding is marked <code>evidence_verified: false</code> and flagged with a warning in the report: "Evidence citation could not be verified — human review required." Never silently dropped.</div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">Scoring Tool</div><div class="tc-name">Severity Calculator</div></div><span class="tc-badge tb-purp">All Agents</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">calculate_severity(obligation_type: str, coverage_score: float, is_mandatory: bool) → Severity</div>
+        <div class="tc-why"><strong>What it does:</strong> Deterministic severity scoring — no LLM involved. Takes the regulation's obligation type and the bank policy coverage score (cosine similarity of best match) → returns CRITICAL / HIGH / MEDIUM / LOW.<br><br><strong>Logic:</strong> CRITICAL = mandatory + no coverage (sim=0). HIGH = mandatory + weak coverage (0 &lt; sim &lt; 0.70). MEDIUM = advisory + no coverage. LOW = advisory + weak coverage.<br><br><strong>Why deterministic:</strong> LLM severity judgments are inconsistent across runs. Same inputs must produce the same severity every time for an audit report to be defensible.</div>
+        <div class="tc-retry"><span>No retry needed</span> — pure function, no I/O.</div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tc-head"><div><div class="tc-label">Delegation Tool</div><div class="tc-name">Inter-Agent Call</div></div><span class="tc-badge tb-orng">Peer-to-Peer</span></div>
+      <div class="tc-body">
+        <div class="tc-sig">call_agent(agent_type: str, query: str, context: str, call_depth: int) → AgentResult</div>
+        <div class="tc-why"><strong>What it does:</strong> Calls a peer agent with a specific query and the regulation section context. The called agent decides — based on query complexity — whether to run its full LangGraph pipeline or return a quick focused answer.<br><br><strong>Call depth enforcement:</strong> If <code>call_depth ≥ 2</code>, this tool refuses to call and returns: "Max call depth reached — analysis limited to current agent scope." Prevents infinite loops.<br><br><strong>Agent decision (full vs quick):</strong> If query is broad ("analyze all API security implications") → full pipeline. If query is narrow ("does /payments endpoint use OAuth2?") → quick focused retrieval + LLM answer without full diagnosis loop.</div>
+        <div class="tc-retry"><span>On peer agent failure:</span> Returns partial result with error flag. Calling agent logs the delegation failure and continues with its own analysis, noting the limitation in the report.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- INTER-AGENT COMMUNICATION -->
+<div class="section" id="inter">
+  <div class="sec-label">Peer-to-Peer Architecture</div>
+  <div class="sec-title">How Agents Communicate</div>
+  <div class="sec-sub">Agents call each other as tools — no master orchestrator. Each agent decides when to delegate based on the regulation section's domain. Call depth is tracked in LangGraph state to prevent circular loops.</div>
+
+  <div class="ia-diagram">
+    <div class="ia-title">Agent Communication Map — V1</div>
+    <div class="ia-grid">
+      <div class="ia-agent v1">
+        <div class="ia-aname">RBI Compliance Agent</div>
+        <div class="ia-adesc">Primary agent for policy compliance.<br><br>Can call → API Compliance Agent (when regulation section is API-specific)<br>Can call → Codebase Agent (when regulation section requires code-level verification)<br><br>call_depth starts at 0.</div>
+      </div>
+      <div class="ia-agent v1b">
+        <div class="ia-aname">API Compliance Agent</div>
+        <div class="ia-adesc">Domain agent for API security compliance.<br><br>Can call → Codebase Agent (when API spec issue requires code-level verification)<br>Cannot call → Compliance Agent (would create circular dependency)<br><br>call_depth received from caller +1.</div>
+      </div>
+      <div class="ia-agent v1b">
+        <div class="ia-aname">Codebase Agent</div>
+        <div class="ia-adesc">Terminal domain agent for code analysis.<br><br>Cannot call any peer agent (call_depth=2 by the time it's reached, or enforced as terminal).<br><br>Returns findings directly to calling agent. Never delegates further.</div>
+      </div>
+    </div>
+
+    <div class="ia-rules">
+      <div class="ia-rule">
+        <div class="ir-num">1</div>
+        <div class="ir-body">
+          <div class="ir-name">Call Depth Limit = 2</div>
+          <div class="ir-desc">Compliance Agent (depth=0) → calls API Agent (depth=1) → calls Codebase Agent (depth=2) → Codebase Agent cannot call further. <code>call_depth</code> is part of LangGraph state and passed in every Inter-Agent Call Tool invocation. If <code>call_depth ≥ 2</code>, the tool returns immediately with a depth-limit message.</div>
+        </div>
+      </div>
+      <div class="ia-rule">
+        <div class="ir-num">2</div>
+        <div class="ir-desc"></div>
+        <div class="ir-body">
+          <div class="ir-name">Agent Decides: Full Pipeline vs Quick Answer</div>
+          <div class="ir-desc">When called by a peer, the receiving agent evaluates the query: broad/complex query → runs its full LangGraph diagnosis loop and returns a complete <code>AgentResult</code>. Narrow/specific query → runs a single Vector Search + LLM call and returns a focused answer. This decision is made by the receiving agent's Relevance Reasoner node based on query scope signals.</div>
+        </div>
+      </div>
+      <div class="ia-rule">
+        <div class="ir-num">3</div>
+        <div class="ir-body">
+          <div class="ir-name">Results Are Merged Into Caller's State</div>
+          <div class="ir-desc">The calling agent receives <code>AgentResult { findings: List[GapFinding], agent_domain, call_depth }</code> and merges findings into its own <code>state.findings</code>. The final compiled report attributes each finding to its originating agent — "This gap was identified by the API Compliance Agent."</div>
+        </div>
+      </div>
+      <div class="ia-rule">
+        <div class="ir-num">4</div>
+        <div class="ir-body">
+          <div class="ir-name">Audit Log Tracks Delegation Chain</div>
+          <div class="ir-desc">Every Inter-Agent Call is logged: <code>{ caller_agent, called_agent, query, call_depth, result_summary, latency_ms }</code>. The full delegation chain is reconstructable from the audit log — critical for compliance audits where the bank asks "how did the system reach this conclusion?"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout c-teal">
+    <p><strong>Example delegation chain:</strong> Compliance Agent is analyzing RBI IT Framework Section 4.3 ("Banks must ensure API endpoints used for data sharing implement strong authentication controls"). Relevance Reasoner routes this to DELEGATE → Inter-Agent Call Tool invokes API Compliance Agent with <code>call_depth=1</code> and query: "Does the bank's API spec implement strong authentication controls for data sharing endpoints per RBI IT Framework 4.3?" → API Agent runs full pipeline on its namespace → finds 3 endpoints without OAuth2 → returns <code>AgentResult</code> → Compliance Agent merges findings → report attributes gap to API Agent with delegation chain documented.</p>
+  </div>
+</div>
+
+<!-- AGENTS -->
+<div class="section" id="agents">
+  <div class="sec-label">Domain Agents</div>
+  <div class="sec-title">V1 Agents — Corpus, Tools, Predefined Questions</div>
+  <div class="sec-sub">Three agents in V1. Each has its own pgvector namespaces, its own tool subset, and its own predefined questions stored in Supabase. All three run the same LangGraph StateGraph pattern.</div>
+
+  <div class="agent-grid">
+
+    <div class="agent-card ac-v1">
+      <div class="ac-head">
+        <div class="ac-top"><div class="ac-domain">Domain Agent 1</div><span class="ac-ver ver-now">V1 — Build Now</span></div>
+        <div class="ac-name">RBI Compliance Agent</div>
+        <div class="ac-desc">Analyzes whether a bank's policy documents cover RBI IT Framework and data governance mandates. Can delegate API-related sections to API Agent and code-related sections to Codebase Agent. Primary agent — call_depth always starts at 0.</div>
+        <div class="ac-docs">
+          <span class="dt dt-reg">📄 RBI IT Framework</span>
+          <span class="dt dt-reg">📄 RBI Data Governance Circular</span>
+          <span class="dt dt-bank">📄 Bank Internal Policy PDF</span>
+        </div>
+      </div>
+      <div class="ac-body">
+        <div class="ac-sec-title">Available Tools</div>
+        <div class="ac-tools">
+          <span class="ac-tool-tag att-blue">Vector Search</span>
+          <span class="ac-tool-tag att-blue">Section Expander</span>
+          <span class="ac-tool-tag att-blue">RBI Scraper</span>
+          <span class="ac-tool-tag att-blue">Evidence Validator</span>
+          <span class="ac-tool-tag att-blue">Severity Calculator</span>
+          <span class="ac-tool-tag att-orng">→ API Agent</span>
+          <span class="ac-tool-tag att-orng">→ Codebase Agent</span>
+        </div>
+        <div class="ac-sec-title">Sample Predefined Questions</div>
+        <ul class="ac-qs">
+          <li>What data classification requirements does RBI mandate and does bank policy define classification tiers?</li>
+          <li>Does RBI require a BCP and does bank policy address BCP testing frequency?</li>
+          <li>What access control requirements does RBI specify and how does bank policy implement RBAC?</li>
+          <li>Does RBI mandate incident reporting timelines and does bank policy define those timelines?</li>
+          <li>What third-party vendor risk management does RBI require vs bank outsourcing controls?</li>
+          <li>Does RBI specify audit log retention periods and does bank policy comply?</li>
+          <li>What encryption standards does RBI mandate for data at rest and in transit?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="agent-card ac-v1b">
+      <div class="ac-head">
+        <div class="ac-top"><div class="ac-domain">Domain Agent 2</div><span class="ac-ver ver-now">V1 — Build Now</span></div>
+        <div class="ac-name">API Compliance Agent</div>
+        <div class="ac-desc">Analyzes whether a bank's API specifications comply with RBI API security and open banking regulations. Can be called by Compliance Agent as a peer. Can delegate code-level verification to Codebase Agent. Produces endpoint-level gap findings.</div>
+        <div class="ac-docs">
+          <span class="dt dt-reg">📄 RBI API Security Circular</span>
+          <span class="dt dt-reg">📄 RBI Open Banking Framework</span>
+          <span class="dt dt-bank">📄 Bank OpenAPI / Swagger Spec</span>
+        </div>
+      </div>
+      <div class="ac-body">
+        <div class="ac-sec-title">Available Tools</div>
+        <div class="ac-tools">
+          <span class="ac-tool-tag att-blue">Vector Search</span>
+          <span class="ac-tool-tag att-blue">Section Expander</span>
+          <span class="ac-tool-tag att-blue">RBI Scraper</span>
+          <span class="ac-tool-tag att-blue">Evidence Validator</span>
+          <span class="ac-tool-tag att-blue">Severity Calculator</span>
+          <span class="ac-tool-tag att-orng">→ Codebase Agent</span>
+        </div>
+        <div class="ac-sec-title">Sample Predefined Questions</div>
+        <ul class="ac-qs">
+          <li>Does RBI mandate OAuth 2.0 for customer-facing APIs and do bank API specs implement it?</li>
+          <li>What rate limiting does RBI specify for open banking APIs and are rate-limit headers present?</li>
+          <li>Does RBI require TLS 1.2+ and do bank API endpoints enforce HTTPS?</li>
+          <li>What PII fields does RBI require masked in API responses and are they masked in spec?</li>
+          <li>Does RBI mandate API audit logging and does bank spec include logging headers?</li>
+          <li>What token expiry requirements does RBI specify and do API specs define token TTLs?</li>
+          <li>What error response standards does RBI mandate to prevent information leakage?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="agent-card ac-v1c">
+      <div class="ac-head">
+        <div class="ac-top"><div class="ac-domain">Domain Agent 3</div><span class="ac-ver ver-now">V1 — Build Now</span></div>
+        <div class="ac-name">Codebase Agent</div>
+        <div class="ac-desc">Analyzes a bank's source code and technical docs against RBI security and code quality regulations. Inspired by RepoGPT — ingests code repos into pgvector, enabling semantic search over code. Terminal agent — never delegates to peers. Can be called by both Compliance and API agents.</div>
+        <div class="ac-docs">
+          <span class="dt dt-reg">📄 RBI IT Security Regulations</span>
+          <span class="dt dt-code">💻 Bank Source Code (repo)</span>
+          <span class="dt dt-bank">📄 Bank Technical Docs</span>
+        </div>
+      </div>
+      <div class="ac-body">
+        <div class="ac-sec-title">Available Tools (Terminal — no inter-agent calls)</div>
+        <div class="ac-tools">
+          <span class="ac-tool-tag att-blue">Vector Search (code namespace)</span>
+          <span class="ac-tool-tag att-blue">Section Expander</span>
+          <span class="ac-tool-tag att-blue">RBI Scraper</span>
+          <span class="ac-tool-tag att-blue">Evidence Validator</span>
+          <span class="ac-tool-tag att-blue">Severity Calculator</span>
+        </div>
+        <div class="ac-sec-title">Sample Predefined Questions</div>
+        <ul class="ac-qs">
+          <li>Does RBI require encryption of sensitive data fields and are they encrypted in the codebase?</li>
+          <li>Does RBI mandate no hardcoded credentials and does the codebase contain hardcoded secrets?</li>
+          <li>What RBI logging requirements exist and does the codebase implement structured audit logging?</li>
+          <li>Does RBI require input validation for financial transactions and is it present in payment code?</li>
+          <li>What RBI requirements exist for session management and how does the codebase handle sessions?</li>
+          <li>Does RBI mandate secure key management and how does the codebase handle cryptographic keys?</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="agent-card ac-v2">
+      <div class="ac-head">
+        <div class="ac-top"><div class="ac-domain">Domain Agent N</div><span class="ac-ver ver-next">V2+ — Planned</span></div>
+        <div class="ac-name">Cybersecurity · IT · Cloud · AML Agents</div>
+        <div class="ac-desc">Same LangGraph StateGraph pattern. New pgvector namespace + new predefined questions in Supabase + register in Gateway dispatcher. Zero changes to existing agents or infrastructure when adding new domains.</div>
+        <div class="ac-docs">
+          <span class="dt dt-reg">📄 Domain-specific RBI regulation</span>
+          <span class="dt dt-bank">📄 Domain-specific bank document</span>
+        </div>
+      </div>
+      <div class="ac-body">
+        <div class="ac-sec-title">Extension Pattern</div>
+        <ul class="ac-qs">
+          <li>Create new agent_domain namespace in Supabase pgvector</li>
+          <li>Ingest domain regulation documents under new namespace</li>
+          <li>Add predefined questions for new domain in Supabase admin UI</li>
+          <li>Implement LangGraph StateGraph (copy pattern from V1 agents)</li>
+          <li>Register in Gateway dispatcher · Deploy as new Render service</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 3 MODES -->
+<div class="section" id="modes">
+  <div class="sec-label">Operating Modes</div>
+  <div class="sec-title">3 Modes — Mutually Exclusive Per Run</div>
+  <div class="sec-sub">User picks exactly one mode per run. Full Diagnosis uses the full LangGraph ReAct loop. Predefined Questions uses a simplified loop (no section-by-section iteration). Free Chat is synchronous with session memory.</div>
+
+  <div class="diagram">
+    <div class="d-lbl" style="margin-bottom:14px;">MODE A — Full Diagnosis (LangGraph ReAct loop, section-by-section, tool calling, peer delegation)</div>
+    <div class="d-row">
+      <div class="box c-gold"><div class="box-tag">Step 1</div><div class="box-name">Load All Regulation Chunks</div><div class="box-tech">Sequential fetch, not retrieval · is_active=true · ordered by chunk_index</div></div>
+      <div class="box c-gold"><div class="box-tag">Step 2</div><div class="box-name">Reason Per Section</div><div class="box-tech">SKIP · INVESTIGATE · DELEGATE — LangGraph conditional edge</div></div>
+      <div class="box c-gold"><div class="box-tag">Step 3</div><div class="box-name">Call Tools / Delegate</div><div class="box-tech">Vector Search · Expander · Scraper · Inter-Agent Call · max 3 retries</div></div>
+      <div class="box c-gold"><div class="box-tag">Step 4</div><div class="box-name">Validate + Score</div><div class="box-tech">Evidence Validator · Severity Calculator · Append to state.findings</div></div>
+      <div class="box c-gold"><div class="box-tag">Step 5</div><div class="box-name">Compile Report</div><div class="box-tech">Deduplicate · Jinja2 → WeasyPrint → PDF → R2 → READY</div></div>
+    </div>
+
+    <div class="divider" style="margin:24px 0 20px;">MODE B — Predefined Questions (simplified loop, no section iteration)</div>
+    <div class="d-row">
+      <div class="box c-teal"><div class="box-tag">Step 1</div><div class="box-name">Fetch Active Questions</div><div class="box-tech">SELECT from Supabase predefined_questions · Editable via admin UI</div></div>
+      <div class="box c-teal"><div class="box-tag">Step 2</div><div class="box-name">Per Question: Dual Retrieval</div><div class="box-tech">Vector Search regulation NS + bank NS · Same query embedding · top-5 each</div></div>
+      <div class="box c-teal"><div class="box-tag">Step 3</div><div class="box-name">LangGraph Analysis Node</div><div class="box-tech">Gemini comparative analysis · Tools available (Expander, Scraper, Validator)</div></div>
+      <div class="box c-teal"><div class="box-tag">Step 4</div><div class="box-name">Compile Report</div><div class="box-tech">Per-question findings → severity scored → PDF → R2 → READY</div></div>
+    </div>
+
+    <div class="divider" style="margin:24px 0 20px;">MODE C — Free Chat (synchronous, session memory, no ARQ)</div>
+    <div class="d-row">
+      <div class="box c-blue"><div class="box-tag">Step 1</div><div class="box-name">User Query → Dual Retrieval</div><div class="box-tech">Embed query · Both namespaces · If max sim &lt; 0.70 → "I don't know"</div></div>
+      <div class="box c-blue"><div class="box-tag">Step 2</div><div class="box-name">Build Context</div><div class="box-tech">Retrieved chunks + Redis session memory (last 6 turns, TTL 30min)</div></div>
+      <div class="box c-blue"><div class="box-tag">Step 3</div><div class="box-name">Gemini Response</div><div class="box-tech">Strict grounding · Evidence citations · "I don't know" fallback</div></div>
+      <div class="box c-blue"><div class="box-tag">Step 4</div><div class="box-name">Store + Stream</div><div class="box-tech">Append turn to Redis memory · Stream response to frontend</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<div class="section" id="services">
+  <div class="sec-label">Service Design</div>
+  <div class="sec-title">5 Services — What Runs, What It Does</div>
+  <div class="sec-sub">5 Render deployments. Codebase Agent is a separate service from V1 day one — it has unique ingestion needs (code repos, not just PDFs). Report rendering and audit logging inlined into each agent service.</div>
+
+  <div class="svc-list">
+
+    <div class="svc-item">
+      <div class="svc-head" onclick="toggle(this)">
+        <div class="svc-num">SVC 01</div>
+        <div class="svc-name">API Gateway Service</div>
+        <div class="svc-tech">FastAPI · Supabase Auth · Rate limiting</div>
+        <div class="svc-badge sb-gold">Render · Supabase Auth</div>
+      </div>
+      <div class="svc-body">
+        <p><strong>Single responsibility:</strong> Entry point. Validates JWT, routes to correct agent service, creates job records, enqueues ARQ tasks, injects <code>call_depth=0</code> into LangGraph state. Zero business logic.</p>
+        <ul>
+          <li><strong>Job creation:</strong> <code>POST /jobs</code> with <code>agent_type + mode</code> → Supabase job record → ARQ task enqueued for agent worker → returns <code>job_id</code>.</li>
+          <li><strong>Mode routing:</strong> Modes A + B → ARQ async workers. Mode C → synchronous chat endpoint on the agent service directly (no ARQ).</li>
+          <li><strong>call_depth injection:</strong> All ARQ tasks are enqueued with <code>call_depth=0</code> in LangGraph initial state. Inter-agent calls increment this in the tool — Gateway never sees call_depth > 0.</li>
+          <li><strong>Status polling:</strong> <code>GET /jobs/{job_id}/status</code> → reads Supabase job table. Frontend polls every 3s.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="svc-item">
+      <div class="svc-head" onclick="toggle(this)">
+        <div class="svc-num">SVC 02</div>
+        <div class="svc-name">Document Ingestion Service</div>
+        <div class="svc-tech">FastAPI · LangChain loaders · text-embedding-004 · pgvector · prance · tree-sitter</div>
+        <div class="svc-badge sb-gold">Render · Supabase · Cloudflare R2</div>
+      </div>
+      <div class="svc-body">
+        <p><strong>Single responsibility:</strong> Accept any document or code file, parse it, chunk it appropriately, embed it, and store in pgvector under the correct namespace. Handles PDFs, OpenAPI specs, and source code repos.</p>
+        <ul>
+          <li><strong>PDF ingestion:</strong> LangChain PDFLoader → RecursiveCharacterTextSplitter (chunk_size=800, overlap=100) → batch embed → pgvector INSERT with <code>(agent_domain, doc_type, document_id, chunk_index, version, is_active)</code>.</li>
+          <li><strong>OpenAPI spec ingestion:</strong> <code>prance</code> resolves $ref chains → each endpoint flattened to a description chunk with <code>endpoint_path</code> metadata → embedded → stored.</li>
+          <li><strong>Code repo ingestion (Codebase Agent):</strong> Bank uploads zip of source code → tree-sitter parses each file by language → extracts function/class level chunks with file path + line range metadata → embedded → stored in <code>codebase_bank_doc</code> namespace. This is the RepoGPT pattern applied to compliance.</li>
+          <li><strong>Versioning:</strong> Re-ingest marks existing chunks <code>is_active=false</code>, increments version, inserts new chunks as active. Atomic transaction.</li>
+          <li><strong>Raw file storage:</strong> All originals → Cloudflare R2 at <code>r2://bankguard/{agent_domain}/{doc_type}/{version}/</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="svc-item">
+      <div class="svc-head" onclick="toggle(this)">
+        <div class="svc-num">SVC 03</div>
+        <div class="svc-name">RBI Compliance Agent Service</div>
+        <div class="svc-tech">FastAPI · LangGraph StateGraph · Gemini API · all tools · Jinja2 · WeasyPrint</div>
+        <div class="svc-badge sb-gold">Render · Gemini API · Supabase · Cloudflare R2</div>
+      </div>
+      <div class="svc-body">
+        <p><strong>Single responsibility:</strong> Run the LangGraph ReAct loop for the RBI Compliance domain. Handles all 3 modes. Can delegate to API Agent and Codebase Agent via Inter-Agent Call Tool. Report rendering and audit logging inlined.</p>
+        <ul>
+          <li><strong>LangGraph StateGraph:</strong> Nodes: Initialize → Relevance Reasoner → Tool Caller → Evidence Quality Check → Gap Analyzer → Append Finding → Compile Report. Edges: conditional based on agent reasoning output.</li>
+          <li><strong>State checkpointing:</strong> LangGraph checkpoints persisted to Redis via Upstash. If worker crashes, ARQ retry resumes from last checkpoint — not from scratch.</li>
+          <li><strong>Tool registration:</strong> All 7 tools (Vector Search, Expander, Scraper, Validator, Severity Calculator, → API Agent, → Codebase Agent) registered with LangGraph tool node.</li>
+          <li><strong>Mode A worker:</strong> ARQ background task, runs full StateGraph loop. Duration: 5–20 minutes for a full RBI circular.</li>
+          <li><strong>Mode B worker:</strong> ARQ background task, simplified loop per question. Duration: 2–5 minutes for 10-15 questions.</li>
+          <li><strong>Mode C endpoint:</strong> Synchronous FastAPI endpoint. No ARQ. Dual retrieval + Redis session memory + Gemini. Duration: 2–5 seconds per turn.</li>
+          <li><strong>Audit log:</strong> Async fire-and-forget write to Supabase after every Gemini call and every tool call.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="svc-item">
+      <div class="svc-head" onclick="toggle(this)">
+        <div class="svc-num">SVC 04</div>
+        <div class="svc-name">API Compliance Agent Service</div>
+        <div class="svc-tech">FastAPI · LangGraph StateGraph · Gemini API · prance · all tools · Jinja2 · WeasyPrint</div>
+        <div class="svc-badge sb-teal">Render · Gemini API · Supabase · Cloudflare R2</div>
+      </div>
+      <div class="svc-body">
+        <p><strong>Single responsibility:</strong> Run the LangGraph ReAct loop for the API Compliance domain. Identical structure to SVC 03. Can be called by Compliance Agent (call_depth=1) and can call Codebase Agent (call_depth=2). Produces endpoint-level gap findings.</p>
+        <ul>
+          <li><strong>When called as peer:</strong> Receives <code>{ query, context, call_depth }</code> from Inter-Agent Call Tool. Relevance Reasoner evaluates query scope → full pipeline or quick answer. Returns <code>AgentResult</code> to caller.</li>
+          <li><strong>OpenAPI-aware analysis:</strong> Bank API spec chunks stored with <code>endpoint_path</code> metadata. Gap findings reference specific endpoint paths directly — no LLM re-parsing of spec.</li>
+          <li><strong>Quick answer mode (when called as peer with narrow query):</strong> Single Vector Search → Gemini focused analysis → return finding. Skips full iteration loop. Typically 3–8 seconds.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="svc-item">
+      <div class="svc-head" onclick="toggle(this)">
+        <div class="svc-num">SVC 05</div>
+        <div class="svc-name">Codebase Agent Service</div>
+        <div class="svc-tech">FastAPI · LangGraph StateGraph · Gemini API · tree-sitter · all tools (no inter-agent) · Jinja2 · WeasyPrint</div>
+        <div class="svc-badge sb-blue">Render · Gemini API · Supabase · Cloudflare R2</div>
+      </div>
+      <div class="svc-body">
+        <p><strong>Single responsibility:</strong> Run the LangGraph ReAct loop for codebase compliance analysis. Terminal agent — never calls peer agents. Can be called by both Compliance Agent (depth=1 or 2) and API Agent (depth=2). Analyzes bank source code against RBI security and code quality requirements.</p>
+        <ul>
+          <li><strong>Code namespace:</strong> pgvector namespace <code>codebase_bank_doc</code> contains function/class level chunks with file path, language, and line range metadata. Ingested via tree-sitter in Ingestion Service.</li>
+          <li><strong>Code-specific analysis:</strong> Vector Search retrieves relevant code sections → Gemini reasons about compliance: "Does this function implement proper input validation per RBI requirement X?" → Evidence Validator confirms the cited code chunk exists.</li>
+          <li><strong>Terminal enforcement:</strong> Inter-Agent Call Tool is not registered in this agent's tool set. Physically cannot delegate. call_depth check also enforced as backup.</li>
+          <li><strong>RepoGPT pattern:</strong> Same semantic code search as RepoGPT — user (or calling agent) can ask natural language questions about the codebase. The LangGraph wrapper adds compliance reasoning and evidence validation on top.</li>
+          <li><strong>Quick answer mode:</strong> When called as peer with narrow query (e.g. "does the payment service encrypt card numbers?") → single code namespace search → Gemini → return finding. 3–8 seconds.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DATA FLOW -->
+<div class="section" id="dataflow">
+  <div class="sec-label">End-to-End</div>
+  <div class="sec-title">Full Diagnosis With Peer Delegation — Step by Step</div>
+  <div class="sec-sub">Tracing the most complex path: Compliance Agent running Full Diagnosis, encountering an API-related section, delegating to API Agent, which then delegates to Codebase Agent.</div>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="fs-dot">1</div>
+      <div class="fs-content">
+        <div class="fs-head">User Starts Full Diagnosis — RBI Compliance Agent</div>
+        <div class="fs-body">User selects Compliance Agent + Full Diagnosis mode → <code>POST /jobs</code> → Gateway creates job (<code>call_depth=0</code> in state) → ARQ task enqueued → worker starts LangGraph StateGraph → Initialize node loads all compliance regulation chunks from pgvector.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">2</div>
+      <div class="fs-content">
+        <div class="fs-head">Agent Iterates — Skips, Investigates, Delegates</div>
+        <div class="fs-body">Agent processes chunks one by one. Section on "preamble and definitions" → <strong>SKIP</strong>. Section on "access control requirements" → <strong>INVESTIGATE</strong> → Vector Search retrieves bank policy chunks → gap found → Evidence Validator → Severity Calculator → appended to findings. Section on "API authentication controls" → <strong>DELEGATE</strong> → Inter-Agent Call Tool invoked with <code>call_depth=1</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">3</div>
+      <div class="fs-content">
+        <div class="fs-head">API Agent Called as Peer (call_depth=1)</div>
+        <div class="fs-body">API Compliance Agent receives query: <strong>"Do the bank's APIs implement authentication controls per RBI IT Framework section 4.3?"</strong> Relevance Reasoner evaluates: broad query → run full pipeline on API namespace. Iterates API regulation chunks. Finds 3 endpoints without OAuth2. Encounters a section on TLS implementation in code → <strong>DELEGATE</strong> to Codebase Agent with <code>call_depth=2</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">4</div>
+      <div class="fs-content">
+        <div class="fs-head">Codebase Agent Called as Peer (call_depth=2)</div>
+        <div class="fs-body">Codebase Agent receives query: <strong>"Does the bank's payment service enforce TLS 1.2+ in code?"</strong> Relevance Reasoner: narrow query → quick answer mode. Searches code namespace → retrieves payment service connection code → Gemini: "TLS version is hardcoded as TLSv1.0 in payment_client.py line 47 — violates RBI requirement for TLS 1.2+." → Evidence Validator confirms chunk exists → returns <code>AgentResult</code> to API Agent. <strong>Cannot delegate further — call_depth=2.</strong></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">5</div>
+      <div class="fs-content">
+        <div class="fs-head">Results Bubble Up — API Agent → Compliance Agent</div>
+        <div class="fs-body">API Agent merges Codebase Agent's TLS finding into its own findings. Compiles its <code>AgentResult</code> (4 total findings: 3 OAuth2 gaps + 1 TLS code gap) → returns to Compliance Agent. Compliance Agent merges all 4 findings into <code>state.findings</code>. Continues iterating remaining compliance regulation chunks.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">6</div>
+      <div class="fs-content">
+        <div class="fs-head">Compile Final Report</div>
+        <div class="fs-body">All chunks processed. <code>state.findings</code> deduplicated by regulation clause reference. Each finding tagged with originating agent. Sorted by severity. Jinja2 renders report attributing: "Gap identified by RBI Compliance Agent", "Gap identified by API Compliance Agent via delegation", "Gap identified by Codebase Agent via delegation chain." WeasyPrint → PDF → Cloudflare R2 → pre-signed URL. Job status → <code>READY</code>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="fs-dot">7</div>
+      <div class="fs-content">
+        <div class="fs-head">Frontend + Follow-up Chat</div>
+        <div class="fs-body">Frontend polling detects <code>READY</code> → renders gap report with delegation chain visible ("This finding was discovered via API Agent → Codebase Agent"). User can then switch to <strong>Free Chat mode</strong> to ask follow-up questions about specific findings — e.g. "What exactly needs to change in payment_client.py to fix the TLS gap?" Chat retrieves the relevant code chunk + regulation chunk and answers with evidence.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STACK -->
+<div class="section" id="stack">
+  <div class="sec-label">Technology</div>
+  <div class="sec-title">Stack Decisions — All Justified</div>
+  <div class="sec-sub">Every choice made against the principles. Rejected alternatives shown.</div>
+
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">Agent Framework</div><div class="sc-name">LangGraph</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">langgraph · StateGraph · tool nodes · conditional edges</div>
+        <div class="sc-why"><strong>Why:</strong> Explicit state graph — every node and edge is visible Python code. Built-in checkpointing to Redis (resumable on crash). Conditional edges map perfectly to SKIP/INVESTIGATE/DELEGATE routing. Visualizable graph impresses in interviews. LangGraph is what senior engineers at ServiceNow-level companies actually use.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> CrewAI — hides control flow, can't explain it line-by-line. AutoGen — conversation-based, not graph-based, harder to audit. Pure Python ReAct loop — valid but LangGraph adds checkpointing and visualization for free.</div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">LLM + Embeddings</div><div class="sc-name">Gemini API</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">google-generativeai · Gemini 1.5 Pro + text-embedding-004</div>
+        <div class="sc-why"><strong>Why:</strong> One API key covers LLM (agent reasoning + tool decisions) and embeddings (ingestion + per-query). Free tier: 1,500 req/day. 1M token context window handles large regulation documents in single calls. No IAM, no service accounts.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> Vertex AI — same model with IAM overhead. OpenAI — separate billing, function calling works but Gemini's structured output is stronger for compliance extraction.</div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">Vector DB</div><div class="sc-name">Supabase + pgvector</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">PostgreSQL 15 + pgvector + RLS + Auth + predefined_questions table</div>
+        <div class="sc-why"><strong>Why:</strong> All agent namespaces in one managed DB. <code>is_active</code> versioning is a single SQL column. Predefined questions stored and editable here. RLS enforces audit log append-only. Supabase Auth gives Google SSO with zero backend code. Free tier: 500MB.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> Pinecone — separate billing, no SQL for relational data. ChromaDB — self-hosted, no managed tier. Weaviate — overkill for V1 scale.</div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">Queue + Checkpoints</div><div class="sc-name">ARQ + Upstash Redis</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">ARQ (asyncio) + Upstash Redis (serverless)</div>
+        <div class="sc-why"><strong>Why:</strong> ARQ for async job queue (Full Diagnosis takes 5–20 min). Upstash Redis also stores: LangGraph state checkpoints (crash recovery), chat session memory (TTL 30min). Three uses, one free-tier service. 10K commands/day free.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> Cloud Tasks — GCP dependency. Celery — heavy. Self-hosted Redis — ops burden at 2AM.</div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">Code Parsing</div><div class="sc-name">tree-sitter</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">tree-sitter (Python, Java, JS, Go bindings)</div>
+        <div class="sc-why"><strong>Why:</strong> Parses source code into AST — extracts function/class level chunks with accurate line ranges and language metadata. This is how Codebase Agent retrieves semantically meaningful code units (a full function) rather than arbitrary 800-token windows that cut across function boundaries.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> Plain text chunking for code — cuts across function boundaries, destroying semantic meaning. Language-specific parsers — too narrow, tree-sitter handles 40+ languages.</div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-head"><div><div class="sc-layer">Compute + Storage</div><div class="sc-name">Render + Cloudflare R2</div></div><span class="sc-v">V1</span></div>
+      <div class="sc-body">
+        <div class="sc-tech">Render (5 Docker services) + Cloudflare R2 (S3-compatible)</div>
+        <div class="sc-why"><strong>Why Render:</strong> Push Dockerfile → HTTPS + auto-redeploy. No IAM, no billing alerts. Free tier for demo. <strong>Why R2:</strong> 10GB free, zero egress cost, boto3 compatible. Code repos + regulation PDFs + generated reports all stored here with pre-signed download URLs.</div>
+        <div class="sc-rej"><span>✗ Rejected:</span> GCP Cloud Run — IAM hell. AWS — egress costs on S3. Railway — valid but Render more widely recognized.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div class="section" id="roadmap">
+  <div class="sec-label">Evolution</div>
+  <div class="sec-title">V1 → V3 Scaling Path</div>
+  <div class="sec-sub">The LangGraph pattern scales by adding new agent services. The peer-to-peer architecture expands by registering new agents. V2 adds more agents and persistent memory. V3 goes commercial.</div>
+  <div class="road-grid">
+    <div class="rc rv1">
+      <div class="rc-head">V1 — Portfolio</div>
+      <div class="rc-body"><ul>
+        <li><strong>3 agents:</strong> Compliance · API · Codebase</li>
+        <li>LangGraph ReAct loop per agent</li>
+        <li>6 tools per agent + Inter-Agent Call Tool</li>
+        <li>Peer-to-peer communication, depth limit=2</li>
+        <li>3 modes: Full Diagnosis · Questions · Chat</li>
+        <li>Per-session chat memory (Redis TTL 30min)</li>
+        <li>Document versioning (is_active flag)</li>
+        <li>Similarity threshold 0.70 + "I don't know"</li>
+        <li><strong>~$0/month total</strong></li>
+      </ul></div>
+    </div>
+    <div class="rc rv2">
+      <div class="rc-head">V2 — Pilot Bank</div>
+      <div class="rc-body"><ul>
+        <li>Add <strong>Cybersecurity Agent</strong></li>
+        <li>Add <strong>IT Regulations Agent</strong></li>
+        <li>Add <strong>Cloud Usage Agent</strong></li>
+        <li>Persistent cross-session chat memory (user-linked, with summarization)</li>
+        <li>Call depth limit raised to 3</li>
+        <li>Admin UI for predefined questions management</li>
+        <li>Scheduled re-analysis on new RBI circular ingest</li>
+        <li>Multi-tenant data isolation (per-bank RLS schemas)</li>
+        <li>Render paid tier (no spin-down)</li>
+      </ul></div>
+    </div>
+    <div class="rc rv3">
+      <div class="rc-head">V3 — Commercial</div>
+      <div class="rc-body"><ul>
+        <li>Full coverage: <strong>SEBI · IRDAI · NABARD · AML/KYC</strong></li>
+        <li>Render → GKE/EKS (autoscaling)</li>
+        <li>pgvector → Pinecone (100M+ vectors)</li>
+        <li>Real-time RBI circular monitoring + auto-ingest</li>
+        <li><strong>ServiceNow GRC integration API</strong></li>
+        <li>Fine-tune Gemini on V1/V2 audit trail data</li>
+        <li>SOC 2 Type II compliance posture</li>
+        <li>White-label SaaS for mid-size banks</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<div class="conclusion">
+  <div class="conc-title">The Architecture in One Paragraph — For Your ServiceNow Interview</div>
+  <div class="conc-body">
+    BankGuard V1 is a <strong>LangGraph-powered multi-agent compliance platform</strong> with three domain agents — RBI Compliance, API Compliance, and Codebase — each running a <strong>ReAct StateGraph</strong> that reasons section by section through RBI regulation chunks. For each regulation section, the agent decides: skip (irrelevant), investigate (calls Vector Search, Section Expander, RBI Scraper tools), or delegate (calls a peer agent via the Inter-Agent Call Tool). Agents communicate <strong>peer-to-peer with no master orchestrator</strong>, with a call depth limit of 2 to prevent circular loops. The called agent decides whether to run its full pipeline or return a quick focused answer based on query scope. All document corpora — regulation PDFs, bank policy docs, OpenAPI specs, and source code repos — are ingested into <strong>Supabase pgvector dual namespaces</strong> per agent domain, with <code>is_active</code> versioning for document updates. The <strong>Evidence Validator tool</strong> verifies every citation before it enters the report; the <strong>Severity Calculator</strong> is deterministic — no LLM inconsistency in scoring. LangGraph state is checkpointed to <strong>Upstash Redis</strong> for crash recovery. Three modes: <strong>Full Diagnosis</strong> (complete section-by-section ReAct loop), <strong>Predefined Questions</strong> (Supabase-stored, admin-editable), and <strong>Free Chat</strong> (dual-namespace retrieval with session memory). Reports rendered via <strong>Jinja2 + WeasyPrint to PDF</strong>, stored in <strong>Cloudflare R2</strong>. Total infrastructure cost: <strong>$0/month</strong> on free tiers. Adding a V2 agent means one new pgvector namespace, one new LangGraph service, and registering in the gateway — zero changes to existing agents.
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggle(el){
+  const body=el.nextElementSibling;
+  const open=body.classList.contains('open');
+  document.querySelectorAll('.svc-body').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.svc-head').forEach(h=>h.classList.remove('open'));
+  if(!open){body.classList.add('open');el.classList.add('open');}
+}
+document.querySelector('.svc-head').click();
+</script>
+</body>
+</html>

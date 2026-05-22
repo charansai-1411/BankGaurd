@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  rbi_compliance_agent:
+    build:
+      context: ./agents/rbi_compliance
+      dockerfile: Dockerfile
+    ports:
+      - "${RBI_COMPLIANCE_PORT:-8001}:8001"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  api_compliance_agent:
+    build:
+      context: ./agents/api_compliance
+      dockerfile: Dockerfile
+    ports:
+      - "${API_COMPLIANCE_PORT:-8002}:8002"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  codebase_agent:
+    build:
+      context: ./agents/codebase
+      dockerfile: Dockerfile
+    ports:
+      - "${CODEBASE_PORT:-8003}:8003"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  # Optional local Redis for development instead of Upstash
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

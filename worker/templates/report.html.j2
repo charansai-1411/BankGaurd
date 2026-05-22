@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333333;
+            margin: 40px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        h1 {
+            font-size: 26px;
+            color: #0b0d11;
+            border-bottom: 2px solid #e8c547;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            font-size: 18px;
+            color: #161b24;
+            margin-top: 30px;
+        }
+        .meta-box {
+            background-color: #f4f6f9;
+            border: 1px solid #d1d5db;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-critical { background-color: #fecaca; color: #b91c1c; }
+        .badge-high { background-color: #ffedd5; color: #c2410c; }
+        .badge-medium { background-color: #fef9c3; color: #a16207; }
+        .badge-low { background-color: #e0f2fe; color: #0369a1; }
+        .badge-compliant { background-color: #d1fae5; color: #047857; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    <div class="meta-box">
+        <strong>Date Generated:</strong> {{ generation_date }}<br>
+        <strong>Compliance Framework:</strong> Reserve Bank of India (RBI) IT Guidelines<br>
+    </div>
+
+    <h2>Identified Compliance Gaps</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Clause Ref</th>
+                <th>Auditor Domain</th>
+                <th>Finding Summary</th>
+                <th>Severity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for finding in findings %}
+            <tr>
+                <td><strong>{{ finding.regulation_clause_ref }}</strong></td>
+                <td>{{ finding.originating_agent }}</td>
+                <td>{{ finding.finding_text }}</td>
+                <td>
+                    <span class="badge badge-{{ finding.severity|lower }}">
+                        {{ finding.severity }}
+                    </span>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No compliance gaps identified. All systems conform to active regulations.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

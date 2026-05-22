@@ -1,0 +1,6 @@
+arq>=0.25.0
+redis>=5.0.0
+jinja2>=3.0.0
+weasyprint>=60.0
+supabase>=1.0.0
+boto3>=1.28.0
