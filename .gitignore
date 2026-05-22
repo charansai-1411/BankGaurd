@@ -24,3 +24,6 @@ Thumbs.db
 # Local database / Docker logs
 volumes/
 *.log
+test_sdk.py
+test_ingestion.py
+
