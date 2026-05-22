@@ -26,4 +26,4 @@ volumes/
 *.log
 test_sdk.py
 test_ingestion.py
-
+scratch/
