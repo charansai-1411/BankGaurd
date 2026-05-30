@@ -24,7 +24,12 @@ When asked to describe **BankGuard** or your role, here is your high-level overv
 
 #### Q1: Walk me through the overall architecture of BankGuard.
 
-BankGuard uses a highly modular, decoupled multi-service architecture designed to handle long-running, CPU-heavy regulatory analysis while remaining cost-effective, scalable, and resilient. Below is the system architecture diagram and the end-to-end processing data flow:
+### Verbal Pitch (5-10 Line Quick Answer)
+> *"BankGuard is built on a modular, asynchronous multi-service architecture designed to audit bank documents, APIs, and repositories against regulatory frameworks. Client requests enter through an ASGI-compliant **FastAPI Gateway** which handles Supabase JWT authentication, instantiates database tracking, and enqueues jobs onto a Redis-backed **ARQ queue** to prevent HTTP timeouts. The core analysis runs on three isolated Render microservices, each executing a cyclical **LangGraph ReAct StateGraph** specialized for a domain (RBI Compliance, OpenAPI specs, or Tree-Sitter AST code parsing). The agents perform dense semantic searches against a **Supabase pgvector** dual-namespace database (separating regulations from bank evidence) and checkpoint state transitions to **Upstash Redis** for crash resiliency. Gaps are deterministically severity-scored, fuzzy-validated to prevent LLM hallucinations, compiled to PDF using **Jinja2 + WeasyPrint**, and securely uploaded to a zero-egress **Cloudflare R2** object store for download."*
+
+---
+
+Below is the system architecture diagram, component layout, and the end-to-end processing data flow:
 
 ### 1. System Architecture Diagram
 
