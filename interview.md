@@ -30,10 +30,7 @@ BankGuard uses a highly modular, decoupled multi-service architecture designed t
 
 ```mermaid
 graph TD
-    classDef layer fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef component fill:#fff,stroke:#666,stroke-width:1px;
-    
-    subgraph ClientLayer ["Client Layer (Web UI / Swagger UI)"]
+    subgraph ClientLayer ["Client Layer"]
         ReactUI["React Dashboard (React / TypeScript)"]
         SwaggerUI["Swagger UI (API Access)"]
     end
@@ -46,7 +43,7 @@ graph TD
         ARQ["ARQ Task Queue (Redis-backed)"]
     end
     
-    subgraph AgentLayer ["Agent / Compute Layer (Render Services)"]
+    subgraph AgentLayer ["Agent / Compute Layer"]
         RBIAgent["RBI Compliance Agent (LangGraph ReAct)"]
         APIAgent["API Compliance Agent (LangGraph ReAct)"]
         CodeAgent["Codebase Agent (LangGraph ReAct)"]
@@ -84,9 +81,17 @@ graph TD
     RBIAgent -->|Inter-Agent Tool Call| CodeAgent
     APIAgent -->|Inter-Agent Tool Call| CodeAgent
     
-    RBIAgent & APIAgent & CodeAgent -->|State Checkpointing| Redis
-    RBIAgent & APIAgent & CodeAgent -->|Upload PDF report| R2
-    RBIAgent & APIAgent & CodeAgent -->|Log progress| Supabase
+    RBIAgent -->|State Checkpointing| Redis
+    APIAgent -->|State Checkpointing| Redis
+    CodeAgent -->|State Checkpointing| Redis
+    
+    RBIAgent -->|Upload PDF report| R2
+    APIAgent -->|Upload PDF report| R2
+    CodeAgent -->|Upload PDF report| R2
+    
+    RBIAgent -->|Log progress| Supabase
+    APIAgent -->|Log progress| Supabase
+    CodeAgent -->|Log progress| Supabase
 ```
 
 ### 2. Component Layout
